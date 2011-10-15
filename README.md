@@ -1,17 +1,18 @@
-node-green-light --- A very simple stop and go interace to node-fibers
-======================================================================
+node-green-light --- A very simple stop and go interface to node-fibers
+=======================================================================
 
 This wrapper to node-fiber aims to ease calling existing asynchronous 
-from a synchronous(fiber) context. A green-light-fiber gets two functions, 
-one for pausing ('red light', 'pause', 'stop', 'yield') and one for resuming 
-('green light', 'resume' 'go', 'run'). 
+from a synchronous context. A green-light-fiber gets two functions, 
+red for pausing and green for resuming. 
 
-The resume() function is simply handed to asynchronous code as callback and 
-the fiber then pauses() for it. This way all this pointers simply stay as 
-they where. While using node-green-light produces a tad more code than other
-synchronization wrappers it is easy and transparent.
+Calling an asynchronous function is as simple as handing it the green function
+as callback and calling the red function yourself to wait for it to call the.
+The red function returns an array of all arguments passed to green (the
+callback). As the call to the asynchronous function is mostly normal, the this
+pointer is unaffected too.
 
-The red function returns an array of all arguments passed to green (the callback).
+While using node-green-light produces a tad more code than other
+synchronization wrappers might need, but this one is easy and transparent.
 
 EXAMPLES
 --------
