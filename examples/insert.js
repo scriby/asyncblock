@@ -1,7 +1,7 @@
 var mongodb = require('mongodb');
 var server    = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
 var connector = new mongodb.Db('test', server, {});
-var greenlight = require('./green-light');
+var greenlight = require('greenlight');
 
 greenlight(function(red, green, cancel) {
 	// comfort routine for the return values of almost all mongodb functions.
