@@ -1,22 +1,21 @@
-node-green-light --- A very simple stop and go interface to node-fibers
-=======================================================================
+node-green-light --- A very simple stop and go interace to node-fibers
+======================================================================
 
-This wrapper to node-fiber aims to ease calling existing asynchronous 
-from a synchronous context. A green-light-fiber gets two functions, 
-red for pausing and green for resuming. 
+This code aims to be a minimal wrapper to ease calling existing asynchronous 
+from a synchronous(fiber) context. A green-light-fiber gets two functions, 
+one for pausing ('red light', 'pause', 'stop' or 'yield') and one for resuming 
+('green light', 'resume' 'go' or 'run'). It is so minimal hardly deservers to
+be a module in its own. However, possibly it does make use of fibers a tad easier.
 
-Calling an asynchronous function is as simple as handing it the green function
-as callback and calling the red function yourself to wait for it to call the.
-The red function returns an array of all arguments passed to green (the
-callback). As the call to the asynchronous function is mostly normal, the this
-pointer is unaffected too.
+The resume() function is simply handed to asynchronous code as callback and 
+the fiber then pauses() for it. This way all this pointers simply stay as 
+they where in asynchronous mode.
 
-While using node-green-light produces a tad more code than other
-synchronization wrappers might need, but this one is easy and transparent.
+The pause function returns an array of all arguments passed to resume.
 
 EXAMPLES
 --------
-A simple timeout:
+A simple timeout
 
 ```javascript
 var greenlight = require('green-light');
@@ -30,29 +29,52 @@ greenlight(function(pause, resume) {
 console.log('the main context is not impressed');
 ```
 
-Inserting an entry into a mongodb.
+Or inserting an entry into a mongodb.
 
 ```
-var mongodb    = require('mongodb');
-var greenlight = require('./green-light');
-var server     = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
-var connector  = new mongodb.Db('test', server, {});
-
-greenlight(function(red, green) {
-	// comfort routine for the return values of almost all mongodb functions.
-	var myRed = function() {
-		var a = red();
-		if (a[0]) { throw new Error('dberror '+a[0].message); };
-		return a[1];
-	}
+var mongodb = require('mongodb');
+var server    = new mongodb.Server('localhost', mongo.Connection.DEFAULT_PORT, {});
+var connector = new mongodb.Db('test', dbserver, {});
+var greenlight = require('green-light');
+greenlight(red, green, cancel) {
+	// redCheck auto fails if argument 0 is set (mongodb error);
+	var redCheck = function() 
+		{ var a = red(); if (a[0]) { console.warn(a[0].message); cancel(); }; return a; }
 	connector.open(green);
-	var client = myRed();
-	client.collection('test_collection', green);
-	var collection = myRed();
+	var dbclient = redCheck()[1];
+	dbclient.collection('test_collection', green);
+	var collection = redCheck()[1];
 	collection.insert({hello: 'world'}, {safe:true}, green);
-	myRed();
-	client.close(green);
-	myRed();
-	console.log('all finished');
 });
-```
+
+
+	dbclient.open(green);
+	var a = red();
+	client.collection('test_insert', green);
+	a = red();
+	var collection = a[1];
+	collection.insert({a:2}, green);
+	a = red();
+	var docs = a[1];
+	collection.find().toArray(green);
+	a = red();
+	var results = a[1];
+	test.	
+
+    test = function (err, collection) {
+      collection.insert({a:2}, function(err, docs) {
+
+        // Locate all the entries using find
+        collection.find().toArray(function(err, results) {
+          test.assertEquals(1, results.length);
+          test.assertTrue(results.a === 2);
+
+          // Let's close the db
+          client.close();
+        });
+      });
+    };
+
+client.open(function(err, p_client) {
+  client.collection('test_insert', test);
+});

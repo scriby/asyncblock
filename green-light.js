@@ -18,7 +18,7 @@ module.exports = function(fn) {
 	red = function() {
 		if (!light) {
 			process.nextTick(function() {
-				throw new Error('red called on red light');
+				throw new Error('greenlight: red called on red light');
 			});
 		}
 		if (buffer) {
@@ -36,9 +36,7 @@ module.exports = function(fn) {
 			// an async functions might call its callback before red() was called.
 			// so buffer its answer for call of red.
 			if (buffer !== null) {
-				process.nextTick(function() {
-					throw new Error('green called twice on green light');
-				});
+				throw new Error('greenlight: green called twice on green light');
 			}
 			buffer = Array.prototype.slice.call(arguments);
 		} else {
