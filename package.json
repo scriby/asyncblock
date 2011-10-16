@@ -3,13 +3,13 @@
 	"version": "0.0.1",
 	"description": "A simple stop and go interace to node-fiber", 
 	"keywords": [
-		"fiber", "fibers", "coroutine", "stop", "go", "green", "RED"],
+		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],
 	"homepage": "https://github.com/axkibe/node-green-light",
 	"author": "Axel Kittenberger <axkibe@gmail.com> (https://github.com/axkibe/)",
 	"main": "greenlight",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/axkibe/node-green-light.git"
+		"url": "git://github.com/axkibe/node-green-light.git",
 	},
 	"dependencies": {
 		"fibers": "0.6.x",
