@@ -9,9 +9,9 @@
 	"main": "greenlight",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/axkibe/node-green-light.git",
+		"url": "git://github.com/axkibe/node-green-light.git"
 	},
 	"dependencies": {
-		"fibers": "0.6.x",
-	},
+		"fibers": "0.6.x"
+	}
 }
