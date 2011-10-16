@@ -1,5 +1,5 @@
-node-green-light --- A very simple stop and go interace to node-fibers
-======================================================================
+node-green-light --- A simple stop and go interace to node-fibers
+=================================================================
 
 This code aims to be a minimal wrapper to ease calling existing asynchronous 
 from a synchronous(fiber) context. A green-light-fiber gets two functions, 
