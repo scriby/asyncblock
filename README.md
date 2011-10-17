@@ -1,7 +1,7 @@
 node-green-light --- A simple stop and go interface to node-fibers
 ==================================================================
 
-<img src="http://farm6.static.flickr.com/5123/5213858605_b819267488_m.jpg"><span style="font-size:-1;">image: (cc by-nc-nd) http://www.flickr.com/photos/mcdemoura/</span>
+<img src="http://farm6.static.flickr.com/5123/5213858605_b819267488_m.jpg"><span style="font-size:small;">&nbsp;image: (cc by-nc-nd) http://www.flickr.com/photos/mcdemoura/</span>
 
 This wrapper to [node-fibers](https://github.com/laverdet/node-fibers) aims to
 ease calling existing asynchronous code from a synchronous context. A
