@@ -85,6 +85,7 @@ if it equals to true. Otherwise it will return the second. Since this pattern
 occurs most times in node.js API it has been chosen as default. 
 
 However, you can tell red how to treat the arguments passed to green:
+
 ```javascript
 /**
 | This equals to the default behavior, first argument is 'err' and thrown if true. 
