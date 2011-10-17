@@ -3,7 +3,7 @@ var greenlight = require('../greenlight');
 var server     = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
 var database   = new mongodb.Db('test', server, {});
 
-greenlight(function(red, green, cancel) {
+greenlight(function(red, green) {
 	database.open(green);
 	var client = red();
 
