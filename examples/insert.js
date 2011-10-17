@@ -1,23 +1,17 @@
 var mongodb = require('mongodb');
 var server    = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
 var connector = new mongodb.Db('test', server, {});
-var greenlight = require('greenlight');
+var greenlight = require('../greenlight');
 
 greenlight(function(red, green, cancel) {
-	// comfort routine for the return values of almost all mongodb functions.
-	var myRed = function() {
-		var a = red();
-		if (a[0]) { throw new Error('dberror '+a[0].message); };
-		return a[1];
-	}
 	connector.open(green);
-	var client = myRed();
+	var client = red();
 	client.collection('test_collection', green);
-	var collection = myRed();
+	var collection = red();
 	collection.insert({hello: 'world'}, {safe:true}, green);
-	myRed();
+	red('!');
 	client.close(green);
-	myRed();
+	red('!');
 	console.log('all finished');
 });
 

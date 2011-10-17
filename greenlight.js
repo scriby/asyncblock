@@ -2,17 +2,22 @@ require('fibers');
 
 module.exports = function(fn) {
 	var red, green;
-	var light = false; // false .. red, true .. green
+	// current status: false .. red, true .. green	
+	var light = false; 
+
+	// the fiber
 	var fiber  = Fiber(function() {
 		try {
 			fn(red, green);
 		} catch(e) {
+			// throw in next tick so the context matches again if yielded.
 			process.nextTick(function() {
 				throw e;
 			});
 		}
 	});
 
+	// in case green gets called before red, its arguments are buffered here.
 	var buffer = null;
 
 	red = function() {
@@ -21,13 +26,59 @@ module.exports = function(fn) {
 				throw new Error('greenlight: red called on red light');
 			});
 		}
+		var greenArgs;
 		if (buffer) {
-			var b = buffer;
+			greenArgs = buffer;
 			buffer = null;
-			return b;
+		} else {
+			light = false;
+			greenArgs = yield();
 		}
-		light = false;
-		return yield();
+		var asw;
+		var aswType = null;
+		if (arguments.length === 0) {
+			// default behaviour ('!', '<')
+			if (greenArgs[0]) throw greenArgs[0];
+			return greenArgs[1];
+		}
+		for (var ai = 0; ai < arguments.length; ai++) {
+			var a = arguments[ai];
+			if(typeof(a) !== 'string' && !a instanceof String) {
+				throw new Error('greenlight: invalid parameter to red "'+a+'"');
+			}
+			// ignore nulls, '', false etc
+			if (!a || !a[0]) continue;
+			switch(a[0]) {
+			case '!' : 
+				// error test
+				if (greenArgs[ai]) throw greenArgs[ai];
+				break;
+			case '<' : 
+				// return value
+				if (aswType) throw new Error('greenlight: multiple return types to red');
+				asw = greenArgs[ai];
+				aswType = 'argument'; 
+				break;
+			case '#' : 
+				// return array
+				if (aswType) throw new Error('greenlight: multiple return types to red');
+				asw = greenArgs;
+				aswType = 'array'; 
+				break;
+			case (/[A-z]/.test(a[0]) && a[0]) : 
+				// return a table
+				if (aswType && aswType !== 'table') {
+					throw new Error('greenlight: multiple return types to red');
+				} 
+				asw = asw || {};
+				aswType = 'table';
+				asw[a] = greenArgs[ai];
+				break;
+			default :
+				throw new Error('greenlight: unknown parameter to red: ' + a);
+			}
+		}
+		return asw;
 	};
 
 	green = function() {
@@ -44,6 +95,7 @@ module.exports = function(fn) {
 			fiber.run(Array.prototype.slice.call(arguments));
 		}
 	};
+
 	light = true;
 	fiber.run();
 }
