@@ -44,18 +44,21 @@ Inserting an entry into a mongodb.
 var mongodb    = require('mongodb');
 var greenlight = require('greenlight');
 var server     = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
-var connector  = new mongodb.Db('test', server, {});
+var database   = new mongodb.Db('test', server, {});
 
-greenlight(function(red, green) {
-	// comfort routine for the return values of almost all mongodb functions.
-	connector.open(green);
+greenlight(function(red, green, cancel) {
+	database.open(green);
 	var client = red();
+
 	client.collection('test_collection', green);
 	var collection = red();
+
 	collection.insert({hello: 'world'}, {safe:true}, green);
-	red();
+	red('!');
+
 	client.close(green);
-	red();
+	red('!');
+
 	console.log('all finished');
 });
 ```
@@ -81,7 +84,7 @@ fiber (or cause the next call to red to return immediatly). The parameters
 passed to green are parsed by red. 
 
 By default red treats the first parameter as error condition and will throw it
-if it equals to true. Otherwise it will return the second. Since this pattern
+if it evaluates to true. Otherwise it will return the second. Since this pattern
 occurs most times in node.js API it has been chosen as default. 
 
 However, you can tell red how to treat the arguments passed to green:
