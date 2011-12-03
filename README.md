@@ -138,3 +138,9 @@ asyncblock(function(wait, series, parallel){
     console.log('all done');
 });
 ```
+
+## Notes
+
+I haven't implemented any of the "red" options for the parallel execution, and not all of them make sense with it.
+
+It also doesn't prevent you from doing some things that don't really make sense. For example, you can't use both series and parallel before calling wait.
