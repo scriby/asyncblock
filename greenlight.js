@@ -5,10 +5,13 @@ module.exports = function(fn) {
 	// current status: false .. red, true .. green	
 	var light = false; 
 
-	// the fiber
+    var buffers = {};
+    var lights = {};
+
+    // the fiber
 	var fiber  = Fiber(function() {
 		try {
-			fn(red, green);
+			fn(red, green, parallel);
 		} catch(e) {
 			// throw in next tick so the context matches again if yielded.
 			process.nextTick(function() {
@@ -16,6 +19,34 @@ module.exports = function(fn) {
 			});
 		}
 	});
+
+    var parallelCount = 0;
+    var parallelFinished = 0;
+    var parallel = function(key){
+        parallelCount++;
+
+        return function(){
+            parallelFinished++;
+
+            var args = Array.prototype.slice.call(arguments);
+
+            args.key = key;
+
+            if (lights[key]) {
+                // green called on green.
+                // an async functions might call its callback before red() was called.
+                // so buffer its answer for call of red.
+                if (buffers[key] != null) {
+                    throw new Error('greenlight: green called twice on green light');
+                }
+                buffers[key] = args;
+            } else {
+                lights[key] = true;
+
+                fiber.run(args);
+            }
+        };
+    };
 
 	// in case green gets called before red, its arguments are buffered here.
 	var buffer = null;
@@ -26,14 +57,54 @@ module.exports = function(fn) {
 				throw new Error('greenlight: red called on red light');
 			});
 		}
-		var greenArgs;
-		if (buffer) {
-			greenArgs = buffer;
-			buffer = null;
-		} else {
-			light = false;
-			greenArgs = yield();
-		}
+
+        var greenArgs = {};
+
+        if(parallelCount > 0){
+            while(parallelFinished < parallelCount){
+                var ret = Fiber.yield();
+                greenArgs[ret.key] = ret;
+            }
+
+            Object.keys(buffers).forEach(function(bufferKey){
+                greenArgs[bufferKey] = buffers[bufferKey];
+            });
+
+            //Not supporting the fancy red args for now
+            var returnValue = {};
+
+            Object.keys(greenArgs).forEach(function(key){
+                var greenArg = greenArgs[key];
+
+                if(greenArg[0]){
+                    throw new Error(greenArg[0]);
+                }
+
+                if(greenArg.length > 2){
+                    returnValue[key] = greenArg.slice(1);
+                } else {
+                    returnValue[key] = greenArg[1];
+                }
+            });
+
+            //Prepare for the next run
+            parallelFinished = 0;
+            parallelCount = 0;
+            buffers = {};
+            lights = {};
+
+            return returnValue;
+
+        } else {
+            if (buffer) {
+                greenArgs = buffer;
+                buffer = null;
+            } else {
+                light = false;
+                greenArgs = Fiber.yield();
+            }
+        }
+
 		var asw;
 		var aswType = null;
 		if (arguments.length === 0) {
