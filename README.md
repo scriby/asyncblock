@@ -118,8 +118,8 @@ async.series([
 var asyncblock = require('asyncblock');
 
 asyncblock(function(wait, series, parallel){
-    fs.readFile('path1', 'utf8', parallel('first');
-    fs.readFile('path2', 'utf8', parallel('second');
+    fs.readFile('path1', 'utf8', parallel('first'));
+    fs.readFile('path2', 'utf8', parallel('second'));
 
     var fileContents = wait();
     
