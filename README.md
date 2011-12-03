@@ -76,20 +76,15 @@ async.series([
     function(callback){
         async.parallel([
             function(callback) {
-                fs.readFile('path1', 'utf8', function(err, data){
-                    fileContents[0] = data;
-                    callback(err);
-                });
+                fs.readFile('path1', 'utf8', callback);
             },
 
             function(callback) {
-                fs.readFile('path2', 'utf8', function(err, data){
-                    fileContents[1] = data;
-                    callback(err);
-                });
+                fs.readFile('path2', 'utf8', callback);
             }
         ],
-            function(err) {
+            function(err, results){
+                fileContents = results;                                    
                 callback(err);
             }
         );
