@@ -1,131 +1,141 @@
-node-green-light --- A simple stop and go interface to node-fibers
+```
+                                        ______  ______              ______  
+______ ______________  _________ __________  /_ ___  /______ __________  /__
+_  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
+/ /_/ / _(__  ) _  /_/ / _  / / // /__  _  /_/ /_  /  / /_/ // /__  _  ,<   
+\__,_/  /____/  _\__, /  /_/ /_/ \___/  /_.___/ /_/   \____/ \___/  /_/|_|  
+                /____/                                                      
+
+```
+
+
 ==================================================================
 
-<img src="http://farm6.static.flickr.com/5123/5213858605_b819267488_m.jpg"/> <span style="font-size:small; float:right;">image: (cc by-nc-nd) http://www.flickr.com/photos/mcdemoura/</span>
+A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support.
 
-This wrapper to [node-fibers](https://github.com/laverdet/node-fibers) aims to
-ease calling existing asynchronous code from a synchronous context. A
-greenlight fiber gets two functions, red and green.  The first is for pausing
-the other for resumes. Call them anyway you like red/green, pause/resume,
-stop/go etc..
+A sample program in pure node, using the async library, and using asyncblock + fibers.
 
-Calling an asynchronous function is as simple as handing it the green function
-as callback and calling the red function yourself to wait for green to be
-called.  Red returns either one of the arguments passed to green, all arguments
-as array or a table with the arguments (see below).
-
-Since the call to the asynchronous function is almost standard, its this
-pointer is unaffected too. Red and green must always be called in pairs,
-red-green or green-red.  In some cases some asynchronous function might call
-its callback before returning, so in that case a call to green before red is
-valid and red will return immediatly without pause. 
-
-While using node-green-light requires a tad more code than other
-synchronization wrappers might need, this one is straight-forward and
-transparent.
-
-INSTALLATION
-------------
-
-```
-npm install greenlight
-```
-
-EXAMPLES
---------
-A simple timeout:
+### Pure node
 
 ```javascript
-var greenlight = require('greenlight');
 
-greenlight(function(pause, resume) {
-	console.log('starting timer');
-	setTimeout(resume, 2000); 
-	pause();
-	console.log('two seconds passed');
+function example(callback){
+    var finishedCount = 0;
+    var fileContents = [];
+
+    var continuation = function(){
+        if(finishedCount < 2){
+            return;
+        }
+
+        fs.writeFile('path3', fileContents[0], function(err) {
+            if(err) {
+                throw new Error(err);
+            }
+
+            fs.readFile('path3', 'utf8', function(err, data){ 
+                console.log(data);
+                console.log('all done');
+            });
+        });
+    };
+
+    fs.readFile('path1', 'utf8', function(err, data) {
+        if(err) {
+            throw new Error(err);
+        }
+
+        fnishedCount++;
+        fileContents[0] = data;
+
+        continuation();
+    });
+
+    fs.readFile('path2', 'utf8', function(err, data) {
+        if(err) {
+            throw new Error(err);
+        }
+
+        fnishedCount++;
+        fileContents[1] = data;
+
+        continuation();
+    });
+}
+```
+
+### Using async
+
+```javascript
+
+var async = require('async');
+
+var fileContents = [];
+
+async.series([
+    function(callback){
+        async.parallel([
+            function(callback) {
+                fs.readFile('path1', 'utf8', callback);
+            },
+
+            function(callback) {
+                fs.readFile('path2', 'utf8', callback);
+            }
+        ],
+            function(err, results){
+                fileContents = results;                                    
+                callback(err);
+            }
+        );
+    },
+
+    function(callback) {
+        fs.writeFile('path3', fileContents[0], callback);
+    },
+
+    function(callback) {
+        fs.readFile('path3', 'utf8', function(err, data){
+            console.log(data);
+            callback(err);
+        });
+    }
+],
+    function(err) {
+        if(err) {
+            throw new Error(err);
+        }
+        
+        console.log('all done');
+    }
+);
+```
+
+### Using asyncblock + fibers
+
+```javascript
+
+var asyncblock = require('asyncblock');
+
+asyncblock(function(wait, series, parallel){
+    fs.readFile('path1', 'utf8', parallel('first'));
+    fs.readFile('path2', 'utf8', parallel('second'));
+
+    var fileContents = wait();
+    
+    fs.writeFile('path3', fileContents.first, series);
+    wait();
+
+    fs.readFile('path3', 'utf8', series);
+    var data = wait();
+
+    console.log(data);
+    console.log('all done');
 });
-console.log('the main context does not pause');
 ```
 
-Inserting an entry into a mongodb.
+## Notes
 
-```
-var mongodb    = require('mongodb');
-var greenlight = require('greenlight');
-var server     = new mongodb.Server('localhost', mongodb.Connection.DEFAULT_PORT, {});
-var database   = new mongodb.Db('test', server, {});
+I haven't implemented any of the "red" options for the parallel execution, and not all of them make sense with it.
 
-greenlight(function(red, green) {
-	database.open(green);
-	var client = red();
-
-	client.collection('test_collection', green);
-	var collection = red();
-
-	collection.insert({hello: 'world'}, {safe:true}, green);
-	red('!');
-
-	client.close(green);
-	red('!');
-
-	console.log('all finished');
-});
-```
-
-Interface
----------
-The module exports one function returned by require. This functions creates a new red&green fiber.
-```javascript
-var greenlight = require('greenlight');```
-
-For the rest of this documentation its called greenlight. Its one argument is a
-function that will be called as the new red&green fiber. Its two parameters are
-red and green. Again call them anyway you like.
-
-```javascript
-greenlight(function(red, green) {
-	// code.
-});
-```
-
-The call to green is simple and straightforward to resume a paused red&green
-fiber (or cause the next call to red to return immediatly). The parameters
-passed to green are parsed by red. 
-
-By default red treats the first parameter as error condition and will throw it
-if it evaluates to true. Otherwise it will return the second. Since this pattern
-occurs most times in node.js API it has been chosen as default. 
-
-However, you can tell red how to treat the arguments passed to green:
-
-```javascript
-/**
-| This equals to the default behavior, first argument is 'err' and thrown if true. 
-| Second shall be returned.
-*/
-red('!', '<');
-
-
-/**
-| Here the first argument to green is ignored, second it 'err', third return value.
-*/
-red(null, '!', '<');
-
-/**
-| Red returns all arguments passed to green as an array.
-*/
-red('#');
-
-/**
-| Red throws first argument if true, and returns a full array - including err
-| at position 0.
-*/
-red('!', '#');
-
-
-/**
-| Red will return a table with the first argument stored in .foo and the second
-| in .bar 
-*/
-red('foo', 'bar');
-```
+It also doesn't prevent you from doing some things that don't really make sense. For example, you can't use both series and parallel before calling wait.
