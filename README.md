@@ -136,6 +136,17 @@ asyncblock(function(flow){
 
 ## Notes
 
-I haven't implemented any of the "red" options for the parallel execution, and not all of them make sense with it.
+### flow.add and flow.wait
 
-It also doesn't prevent you from doing some things that don't really make sense. For example, you can't use both series and parallel before calling wait.
+Pass the result of flow.add() as a callback to asynchronous functions. Each usage of flow.add() will run in parallel.
+Call flow.wait() when you want execution to pause until all the asynchronous functions are done.
+
+You may pass a key to flow.add, which will be used when getting the result from flow.wait. For example, calling
+flow.add('key1') and flow.add('key2') would produce a result { key1: value1, key2: value2 }. It is not necessary to
+pass a key to flow.add if you do not need to get the result.
+
+If there is only one call to flow.add and no key is passed, the result will be returned as is without the object wrapper.
+
+If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock.
+You only receive from the 2nd arg on from the flow.wait call. If more than one parameter was passed to the callback,
+it will be returned as an array.
