@@ -117,17 +117,17 @@ async.series([
 
 var asyncblock = require('asyncblock');
 
-asyncblock(function(wait, series, parallel){
-    fs.readFile('path1', 'utf8', parallel('first'));
-    fs.readFile('path2', 'utf8', parallel('second'));
+asyncblock(function(flow){
+    fs.readFile('path1', 'utf8', flow.add('first'));
+    fs.readFile('path2', 'utf8', flow.add('second'));
 
-    var fileContents = wait();
+    var fileContents = flow.wait();
     
-    fs.writeFile('path3', fileContents.first, series);
-    wait();
+    fs.writeFile('path3', fileContents.first, flow.add());
+    flow.wait();
 
-    fs.readFile('path3', 'utf8', series);
-    var data = wait();
+    fs.readFile('path3', 'utf8', flow.add());
+    var data = flow.wait();
 
     console.log(data);
     console.log('all done');
