@@ -23,6 +23,11 @@ module.exports = function(fn) {
     
     flow.add = function(key){
         parallelCount++;
+        
+        if(key == null){
+            key = '__' + parallelCount;
+        }
+        
         lights[key] = true;
 
         return function(){
@@ -32,10 +37,7 @@ module.exports = function(fn) {
 
             args.key = key;
 
-            if(key == null){
-                //If no key is set, we don't care about tracking the result
-                fiber.run(args);
-            } else if (lights[key]) {
+            if (lights[key]) {
                 // green called on green.
                 // an async functions might call its callback before red() was called.
                 // so buffer its answer for call of red.
@@ -89,6 +91,11 @@ module.exports = function(fn) {
             parallelCount = 0;
             buffers = {};
             lights = {};
+
+            //If add was called once and no parameter name was set, just return the value as is
+            if(Object.keys(returnValue).length === 1 && '__1' in returnValue) {
+                return returnValue.__1;
+            }
 
             return returnValue;
         } else {
