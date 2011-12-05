@@ -13,6 +13,16 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
 
 A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support.
 
+###Installation
+
+```javascript
+npm install asyncblock
+```
+
+See [node-fibers](https://github.com/laverdet/node-fibers) for more information, especially if you're running on node < v0.5.2.
+
+### Sample
+
 A sample program in pure node, using the async library, and using asyncblock + fibers.
 
 ### Pure node
