@@ -199,3 +199,8 @@ function getContents(path, callback){
 
 When asyncblock encounters an error, it will both throw it and call the errorCallback. Throwing the error will abort
 the current flow, and prevent the callback(null, contents) code from executing.
+
+## Concurrency
+
+Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
+how the code can be written to manage the asynchronous control flow.
