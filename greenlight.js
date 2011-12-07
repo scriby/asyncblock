@@ -76,6 +76,13 @@ module.exports = function(fn) {
                 var greenArg = greenArgs[key];
 
                 if(greenArg[0]){
+                    //If the errorCallback property was set, report the error
+                    if(flow.errorCallback){
+                        process.nextTick(function(){
+                            flow.errorCallback(greenArg[0]);
+                        })
+                    }
+
                     throw new Error(greenArg[0]);
                 }
 
