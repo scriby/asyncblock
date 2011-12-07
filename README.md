@@ -144,6 +144,45 @@ asyncblock(function(flow){
 });
 ```
 
+## Error handling
+
+If any async calls flow.wait() is waiting on return an error as the first argument, asyncblock will throw an Error.
+This will cause the current flow to abort, and the callback may never be called. 
+
+Using try/catch straightforwardly yields a subtle bug:
+
+```javascript
+function getContents(path, callback){
+    asyncblock(function(flow){
+        try{
+            fs.readFile(path, 'utf8', flow.add());
+            var contents = flow.wait();
+            
+            callback(null, contents);
+        } catch(err){
+            callback(err); //If the callback(null, contents) throws an error, this will call the callback twice
+        }
+    });    
+};
+```
+
+To get around the problems, you may set flow.errorCallback:
+
+```javascript
+function getContents(path, callback){
+    asyncblock(function(flow){
+        flow.errorCallback = callback;
+        fs.readFile(path, 'utf8', flow.add());
+        var contents = flow.wait();
+
+        callback(null, contents);
+    });
+};
+```
+
+When asyncblock encounters an error, it will both throw it and call the errorCallback. Throwing the error will abort
+the current flow, and prevent the callback(null, contents) code from executing.
+
 ## Notes
 
 ### flow.add and flow.wait
