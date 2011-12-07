@@ -144,10 +144,27 @@ asyncblock(function(flow){
 });
 ```
 
+## Notes
+
+### flow.add and flow.wait
+
+Pass the result of flow.add() as a callback to asynchronous functions. Each usage of flow.add() will run in parallel.
+Call flow.wait() when you want execution to pause until all the asynchronous functions are done.
+
+You may pass a key to flow.add, which will be used when getting the result from flow.wait. For example, calling
+flow.add('key1') and flow.add('key2') would produce a result { key1: value1, key2: value2 }. It is not necessary to
+pass a key to flow.add if you do not need to get the result.
+
+If there is only one call to flow.add and no key is passed, the result will be returned as is without the object wrapper.
+
+If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock.
+You only receive from the 2nd arg on from the flow.wait call. If more than one parameter was passed to the callback,
+it will be returned as an array.
+
 ## Error handling
 
 If any async calls flow.wait() is waiting on return an error as the first argument, asyncblock will throw an Error.
-This will cause the current flow to abort, and the callback may never be called. 
+If the current function was called asynchronously, it needs to return an error to its callback.
 
 Using try/catch straightforwardly yields a subtle bug:
 
@@ -182,20 +199,3 @@ function getContents(path, callback){
 
 When asyncblock encounters an error, it will both throw it and call the errorCallback. Throwing the error will abort
 the current flow, and prevent the callback(null, contents) code from executing.
-
-## Notes
-
-### flow.add and flow.wait
-
-Pass the result of flow.add() as a callback to asynchronous functions. Each usage of flow.add() will run in parallel.
-Call flow.wait() when you want execution to pause until all the asynchronous functions are done.
-
-You may pass a key to flow.add, which will be used when getting the result from flow.wait. For example, calling
-flow.add('key1') and flow.add('key2') would produce a result { key1: value1, key2: value2 }. It is not necessary to
-pass a key to flow.add if you do not need to get the result.
-
-If there is only one call to flow.add and no key is passed, the result will be returned as is without the object wrapper.
-
-If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock.
-You only receive from the 2nd arg on from the flow.wait call. If more than one parameter was passed to the callback,
-it will be returned as an array.
