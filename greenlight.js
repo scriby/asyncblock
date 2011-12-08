@@ -82,6 +82,7 @@ module.exports = function(fn) {
             while(parallelFinished < parallelCount){
                 //Reset lights every time through the loop such that new async callbacks can be added
                 light = false;
+
                 var ret = Fiber.yield();
 
                 var val = resultHandler(ret);
@@ -102,7 +103,6 @@ module.exports = function(fn) {
             //Prepare for the next run
             parallelFinished = 0;
             parallelCount = 0;
-            light = false;
             returnValue = {};
 
             return toReturn;
