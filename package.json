@@ -1,6 +1,6 @@
 {
 	"name": "asyncblock",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "A fork of greenlight with parallel execution support",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],

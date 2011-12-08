@@ -3,8 +3,9 @@ require('fibers');
 module.exports = function(fn) {
     var flow = {};
 
-    var buffers = {};
-    var lights = {};
+    var returnValue = {};
+    var light = true;
+    var errorCallbackCalled = false;
 
     // the fiber
 	var fiber = Fiber(function() {
@@ -24,87 +25,87 @@ module.exports = function(fn) {
     flow.add = function(key){
         parallelCount++;
         
-        if(key == null){
-            key = '__' + parallelCount;
-        }
-        
-        lights[key] = true;
-
         return function(){
             parallelFinished++;
 
             var args = Array.prototype.slice.call(arguments);
 
+            if(key == null && !('__defaultkey__' in returnValue)){
+                key = '__defaultkey__';
+            }
+
             args.key = key;
 
-            if (lights[key]) {
-                // green called on green.
-                // an async functions might call its callback before red() was called.
-                // so buffer its answer for call of red.
-                if (buffers[key] != null) {
-                    throw new Error('Key ' + key + ' is in use');
+            if (light) {
+                if(key != null){
+                    returnValue[key] = resultHandler(args);
                 }
-                buffers[key] = args;
             } else {
-                lights[key] = true;
+                light = true;
 
                 fiber.run(args);
             }
         };
     };
-    
-	flow.wait = function() {
-        var greenArgs = {};
 
-        if(parallelCount > 0){
-            while(parallelFinished < parallelCount){
-                //Reset lights every time through the loop such that new async callbacks can be added
-                lights = {};
-                
-                var ret = Fiber.yield();
-                greenArgs[ret.key] = ret;
+    var errorHandler = function(ret){
+        if(ret[0]){
+            //Make sure we don't call the error callback more than once
+            if(!errorCallbackCalled){
+                errorCallbackCalled = true;
+                //If the errorCallback property was set, report the error
+                if(flow.errorCallback){
+                    process.nextTick(function(){
+                        flow.errorCallback(ret[0]);
+                    })
+                }
             }
 
-            Object.keys(buffers).forEach(function(bufferKey){
-                greenArgs[bufferKey] = buffers[bufferKey];
-            });
+            throw new Error(ret[0]);
+        }
+    };
 
+    var resultHandler = function(ret){
+        errorHandler(ret);
+
+        if(ret.length > 2){
+            return ret.slice(1);
+        } else {
+            return ret[1];
+        }
+    };
+
+	flow.wait = function() {
+        if(parallelCount > 0){
             //Not supporting the fancy red args for now
-            var returnValue = {};
 
-            Object.keys(greenArgs).forEach(function(key){
-                var greenArg = greenArgs[key];
+            while(parallelFinished < parallelCount){
+                //Reset lights every time through the loop such that new async callbacks can be added
+                light = false;
+                var ret = Fiber.yield();
 
-                if(greenArg[0]){
-                    //If the errorCallback property was set, report the error
-                    if(flow.errorCallback){
-                        process.nextTick(function(){
-                            flow.errorCallback(greenArg[0]);
-                        })
-                    }
-
-                    throw new Error(greenArg[0]);
+                var val = resultHandler(ret);
+                if(ret.key != null){
+                    returnValue[ret.key] = val;
                 }
+            }
 
-                if(greenArg.length > 2){
-                    returnValue[key] = greenArg.slice(1);
-                } else {
-                    returnValue[key] = greenArg[1];
-                }
-            });
+            var toReturn;
+
+            //If add was called once and no parameter name was set, just return the value as is
+            if(parallelCount === 1 && '__defaultkey__' in returnValue) {
+                toReturn = returnValue.__defaultkey__;
+            } else {
+                toReturn = returnValue;
+            }
 
             //Prepare for the next run
             parallelFinished = 0;
             parallelCount = 0;
-            buffers = {};
-            lights = {};
+            light = false;
+            returnValue = {};
 
-            //If add was called once and no parameter name was set, just return the value as is
-            if(Object.keys(returnValue).length === 1 && '__1' in returnValue) {
-                return returnValue.__1;
-            }
-
-            return returnValue;
+            return toReturn;
         } else {
             return;
         }
