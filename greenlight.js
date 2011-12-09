@@ -30,7 +30,7 @@ module.exports = function(fn) {
 
             var args = Array.prototype.slice.call(arguments);
 
-            if(key == null && !('__defaultkey__' in returnValue)){
+            if(parallelCount === 1 && key == null){
                 key = '__defaultkey__';
             }
 
@@ -97,6 +97,8 @@ module.exports = function(fn) {
             if(parallelCount === 1 && '__defaultkey__' in returnValue) {
                 toReturn = returnValue.__defaultkey__;
             } else {
+                delete returnValue.__defaultkey__;
+
                 toReturn = returnValue;
             }
 
