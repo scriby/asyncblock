@@ -11,6 +11,10 @@ module.exports = function(fn) {
 	var fiber = Fiber(function() {
 		try {
 			fn(flow);
+
+            //Prevent memory leak
+            fn = null;
+            fiber = null;
 		} catch(e) {
 			// throw in next tick so the context matches again if yielded.
 			process.nextTick(function() {
