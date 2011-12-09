@@ -204,3 +204,31 @@ the current flow, and prevent the callback(null, contents) code from executing.
 
 Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
 how the code can be written to manage the asynchronous control flow.
+
+## Some more examples
+
+```javascript
+asyncblock(function(flow){
+    console.time('time');
+
+    setTimeout(flow.add(), 1000);
+    flow.wait();
+
+    setTimeout(flow.add(), 2000);
+    flow.wait();
+
+    console.timeEnd('time'); //3 seconds
+});
+```
+
+```javascript
+asyncblock(function(flow){
+    console.time('time');
+
+    setTimeout(flow.add(), 1000);
+    setTimeout(flow.add(), 2000);
+    flow.wait();
+
+    console.timeEnd('time'); //2 seconds
+});
+```
