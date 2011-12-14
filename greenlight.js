@@ -12,10 +12,15 @@ module.exports = function(fn) {
 		try {
 			fn(flow);
 		} catch(e) {
-			// throw in next tick so the context matches again if yielded.
-			process.nextTick(function() {
-				throw e;
-			});
+            if(flow.errorCallback){
+                if(!errorCallbackCalled){
+                    errorCallbackCalled = true;
+
+                    flow.errorCallback(e);
+                }
+            } else {
+                throw e;
+            }
 		} finally {
             //Prevent memory leak
             fn = null;
