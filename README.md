@@ -24,7 +24,7 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 ### Why should I use asyncblock?
 
 * Write async code in synchronous style without blocking
-* Effortlessly combine synchronous and parallel operations with minimal boilerplate
+* Effortlessly combine serial and parallel operations with minimal boilerplate
 * Produce code which is easier to read, reason about, and modify
 * Simplify error handling practices
 * Improve debugging by not losing stack traces across async calls
