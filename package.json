@@ -1,12 +1,12 @@
 {
 	"name": "asyncblock",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "A fork of greenlight with parallel execution support",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],
 	"homepage": "https://github.com/scriby/asyncblock",
 	"author": "Chris Scribner",
-	"main": "greenlight",
+	"main": "asyncblock",
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/scriby/asyncblock.git"

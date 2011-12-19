@@ -7,7 +7,6 @@ module.exports = function(fn) {
     var light = true;
     var errorCallbackCalled = false;
 
-    // the fiber
 	var fiber = Fiber(function() {
 		try {
 			fn(flow);
@@ -64,13 +63,26 @@ module.exports = function(fn) {
                 errorCallbackCalled = true;
                 //If the errorCallback property was set, report the error
                 if(flow.errorCallback){
-                    process.nextTick(function(){
-                        flow.errorCallback(ret[0]);
-                    })
+                    var err;
+
+                    if(typeof ret[0] === 'string'){
+                        err = ret[0];
+                    } else if(ret[0] instanceof Error) {
+                        //Append the stack
+                        err = ret[0];
+                        err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
+                    }
+
+                    flow.errorCallback(err);
+
+                    //Prevent the rest of the code in the fiber from running
+                    fiber.reset();
+                    fn = null;
+                    fiber = null;
+                } else {
+                    throw new Error(ret[0]);
                 }
             }
-
-            throw new Error(ret[0]);
         }
     };
 
