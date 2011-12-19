@@ -26,6 +26,7 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 * Write async code in synchronous style without blocking
 * Effortlessly combine synchronous and parallel operations with minimal boilerplate
 * Produce code which is easier to read, reason about, and modify
+* Simplify error handling practices
 * Improve debugging by not losing stack traces across async calls
 
 ### Why should I not use asyncblock?
