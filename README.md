@@ -32,6 +32,8 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 
 * Fibers are fast, but they're not the fastest. CPU intensive tasks may prefer other solutions (you probably don't want to do CPU intensive work in node anyway...)
 * It requires V8 extensions, which are maintained in the node-fibers module
+     * In the worst case, if future versions of V8 break fibers support completely, a custom build of V8 would be required
+     * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
  
 ### Sample
 
