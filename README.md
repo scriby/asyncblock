@@ -11,7 +11,7 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
 
 ==================================================================
 
-A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support.
+A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support and some other goodies.
 
 ###Installation
 
@@ -21,6 +21,18 @@ npm install asyncblock
 
 See [node-fibers](https://github.com/laverdet/node-fibers) for more information, especially if you're running on node < v0.5.2.
 
+### Why should I use asyncblock?
+
+* Write async code in synchronous style without blocking
+* Effortlessly combine synchronous and parallel operations with minimal boilerplate
+* Produce code which is easier to read, reason about, and modify
+* Improve debugging by not losing stack traces across async calls
+
+### Why should I not use asyncblock?
+
+* Fibers are fast, but they're not the fastest. CPU intensive tasks may prefer other solutions (you probably don't want to do CPU intensive work in node anyway...)
+* It requires V8 extensions, which are maintained in the node-fibers module
+ 
 ### Sample
 
 A sample program in pure node, using the async library, and using asyncblock + fibers.
@@ -160,6 +172,42 @@ If there is only one call to flow.add and no key is passed, the result will be r
 If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock.
 You only receive from the 2nd arg on from the flow.wait call. If more than one parameter was passed to the callback,
 it will be returned as an array.
+
+## Keeping the stack trace
+
+To maintain the stack trace across async calls, the only thing you have to do is use an Error object (instead of a string)
+when calling a callback with an error.
+
+For example:
+
+```javascript
+    var asyncTask = function(callback) {
+        process.nextTick(function() {
+            callback(new Error('An error occured')); //Line 130
+        });
+    };
+
+    asyncblock(function(flow) {
+        asyncTask(flow.add());
+        flow.wait(); //Line 136
+    });
+```
+
+Stack trace:
+
+```javascript
+Error: An error occured
+    at Array.0 (.../sourcecode/asyncblock/test2.js:130:18) //<-- Error callback
+    at EventEmitter._tickCallback (node.js:192:40)
+=== Pre-async stack ===
+Error
+    at .../sourcecode/asyncblock/asyncblock.js:71:67
+    at .../sourcecode/asyncblock/asyncblock.js:90:9
+    at Object.wait (.../sourcecode/asyncblock/asyncblock.js:109:27)
+    at .../sourcecode/asyncblock/test2.js:136:10  //<-- The original call to flow.wait()
+    at .../sourcecode/asyncblock/asyncblock.js:12:4
+
+```
 
 ## Error handling
 
