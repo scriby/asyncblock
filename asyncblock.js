@@ -61,18 +61,18 @@ module.exports = function(fn) {
             //Make sure we don't call the error callback more than once
             if(!errorCallbackCalled){
                 errorCallbackCalled = true;
+                var err;
+
+                if(typeof ret[0] === 'string'){
+                    err = ret[0];
+                } else if(ret[0] instanceof Error) {
+                    //Append the stack
+                    err = ret[0];
+                    err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
+                }
+
                 //If the errorCallback property was set, report the error
                 if(flow.errorCallback){
-                    var err;
-
-                    if(typeof ret[0] === 'string'){
-                        err = ret[0];
-                    } else if(ret[0] instanceof Error) {
-                        //Append the stack
-                        err = ret[0];
-                        err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
-                    }
-
                     flow.errorCallback(err);
 
                     //Prevent the rest of the code in the fiber from running
@@ -80,7 +80,7 @@ module.exports = function(fn) {
                     fn = null;
                     fiber = null;
                 } else {
-                    throw new Error(ret[0]);
+                    throw err;
                 }
             }
         }
