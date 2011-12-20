@@ -75,13 +75,12 @@ module.exports = function(fn) {
                 if(flow.errorCallback){
                     flow.errorCallback(err);
 
-                    //Prevent the rest of the code in the fiber from running
-                    fiber.reset();
                     fn = null;
                     fiber = null;
-                } else {
-                    throw err;
                 }
+
+                //Prevent the rest of the code in the fiber from running
+                throw err;
             }
         }
     };
