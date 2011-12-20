@@ -30,7 +30,13 @@ module.exports = function(fn) {
     var parallelCount = 0;
     var parallelFinished = 0;
     
-    flow.add = function(key){
+    flow.add = function(key, responseFormat){
+        //Support single argument of responseFormat
+        if(key instanceof Array){
+            responseFormat = key;
+            key = null;
+        }
+
         parallelCount++;
         
         return function(){
@@ -43,6 +49,7 @@ module.exports = function(fn) {
             }
 
             args.key = key;
+            args.responseFormat = responseFormat;
 
             if (light) {
                 if(key != null){
@@ -88,11 +95,32 @@ module.exports = function(fn) {
     var resultHandler = function(ret){
         errorHandler(ret);
 
-        if(ret.length > 2){
-            return ret.slice(1);
+        var responseFormat = ret.responseFormat;
+        if(responseFormat instanceof Array) {
+            return convertResult(ret, responseFormat);
         } else {
-            return ret[1];
+            if(ret.length > 2){
+                return ret.slice(1);
+            } else {
+                return ret[1];
+            }
         }
+    };
+
+    var convertResult = function(ret, responseFormat){
+        var formatted = {};
+
+        if(ret instanceof Array){
+            var min = Math.min(ret.length - 1, responseFormat.length);
+
+            for(var i = 0; i < min; i++) {
+                formatted[responseFormat[i]] = ret[i + 1];
+            }
+        } else {
+            formatted[responseFormat[0]] = ret;
+        }
+
+        return formatted;
     };
 
 	flow.wait = function() {
