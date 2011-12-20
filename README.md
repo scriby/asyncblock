@@ -32,7 +32,7 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 ### What are the risks?
 
 * Fibers are fast, but they're not the fastest. CPU intensive tasks may prefer other solutions (you probably don't want to do CPU intensive work in node anyway...)
-* Not suitable for cases where a very large number are allocated and used for an extended period of time [source](http://groups.google.com/group/nodejs/browse_thread/thread/ddd6e2756f1f4d8c/164f8f34d8261fdb?lnk=gst&q=fibers#164f8f34d8261fdb)
+* Not suitable for cases where a very large number are allocated and used for an extended period of time ([source](http://groups.google.com/group/nodejs/browse_thread/thread/ddd6e2756f1f4d8c/164f8f34d8261fdb?lnk=gst&q=fibers#164f8f34d8261fdb))
 * It requires V8 extensions, which are maintained in the node-fibers module
      * In the worst case, if future versions of V8 break fibers support completely, a custom build of V8 would be required
      * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
