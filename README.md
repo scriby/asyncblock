@@ -180,7 +180,7 @@ it will be returned as an array.
 ## Keeping the stack trace
 
 To maintain the stack trace across async calls, the only thing you have to do is use an Error object (instead of a string)
-when calling a callback with an error.
+when calling a callback with an error. Thrown Errors will automatically get the previous stack trace appended to the stack.
 
 For example:
 
