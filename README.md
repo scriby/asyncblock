@@ -36,7 +36,8 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 * It requires V8 extensions, which are maintained in the node-fibers module
      * In the worst case, if future versions of V8 break fibers support completely, a custom build of V8 would be required
      * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
- 
+* When new versions of node (V8) come out, you may have to wait longer to upgrade if the fibers code needs to be adjusted to work with it 
+
 ### Sample
 
 A sample program in pure node, using the async library, and using asyncblock + fibers.
