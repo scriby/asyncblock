@@ -349,6 +349,50 @@ get called twice, so it's important to have the callback not proceed if an error
 
 Note that asyncblock will call the errorCallback only on the first error.
 
+## Formatting results
+
+When more than one parameter is passed from an asynchronous function's callback, it is converted to an array:
+
+```javascript
+    var asyncTask = function(callback) {
+        process.nextTick(function() {
+            callback(null, 1, 2, 3);
+        });                                    
+    }
+    
+    asyncblock(function(flow) {
+        asyncTask(flow.add());
+        
+        var result = flow.wait();
+        console.log(result); // Prints [1, 2, 3]
+    });
+```
+
+In some cases, it may be desirable to add some more structure to the result:
+
+```javascript
+    var asyncTask = function(callback) {
+        process.nextTick(function() {
+            callback(null, 1, 2, 3);
+        });                                    
+    }
+    
+    asyncblock(function(flow) {
+        asyncTask(flow.add(['first', 'second', 'third']));
+        
+        var result = flow.wait();
+        console.log(result); // Prints { first: 1, second: 2, third: 3 }
+        
+        asyncTask('key1', flow.add(['first', 'second', 'third']));
+        asyncTask('key2', flow.add(['a', 'b', 'c']));
+        var result = flow.wait();
+        console.log(result); // Prints { key1: { first: 1, second: 2, third: 3 }, key2: { a: 1, b: 2, c: 3} }
+    });
+```
+
+When calling flow.add, you may pass a format array conditionally. If provided, it will be used to build an object bag
+when returning the results to flow.wait.
+
 ## Concurrency
 
 Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
