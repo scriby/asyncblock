@@ -1,6 +1,6 @@
 var vows = require('vows');
 var assert = require('assert');
-
+var util = require('util');
 var asyncblock = require('../asyncblock.js');
 
 var suite = vows.describe('functionality');
@@ -22,6 +22,19 @@ var delayed = function(callback){
         function(){
             callback(null, 'delayed');
         }
+    );
+};
+
+// sleeps for the specified amount of time and then calls the
+// callback with the number of milliseconds since Jan 1, 1970
+var sleepTest = function(sleepTime, callback) {
+    setTimeout(
+        function() {
+            var d=new Date();
+            var t = d.getTime();
+            callback(null, t);
+        },
+        sleepTime
     );
 };
 
@@ -333,6 +346,30 @@ suite.addBatch({
 
         'Should not error': function(){
 
+        }
+    },
+
+    'maxParallel property limits the number of active fibers': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.maxParallel = 2; // limit to 2 parallel fibers
+
+                sleepTest(350, flow.add('t350')); // adds first fiber and return immediately (fiber should sleep 350ms)
+                sleepTest(200, flow.add('t200')); // adds second fiber and return immediately (fiber should sleep 200ms)
+                sleepTest(100, flow.add('t100')); // should wait here until t200 finishes (fiber should sleep 100ms)
+
+                var result = flow.wait();
+
+                self.callback(null, result);
+            });
+        },
+
+        'Should limit fibers': function(result){
+            // t200 < t100 < t350
+            assert.greater(result.t100, result.t200);
+            assert.greater(result.t350, result.t100);
         }
     }
 });

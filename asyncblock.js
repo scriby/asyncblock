@@ -29,12 +29,25 @@ module.exports = function(fn) {
 
     var parallelCount = 0;
     var parallelFinished = 0;
-    
+
+    // max number of parallel fibers. maxParallel <= 0 means no limit
+    flow.maxParallel = 0;
+
+    // returns the number of currently running fibers
+    flow.fiberCount = function() {
+        return parallelCount - parallelFinished;
+    };
+
     flow.add = function(key, responseFormat){
         //Support single argument of responseFormat
         if(key instanceof Array){
             responseFormat = key;
             key = null;
+        }
+
+        while (flow.maxParallel > 0 && flow.fiberCount() >= flow.maxParallel) {
+            // too many fibers running.  Yield until the fiber count goes down.
+            nextTick();
         }
 
         parallelCount++;
@@ -107,6 +120,22 @@ module.exports = function(fn) {
         }
     };
 
+    // Yields the current fiber and adds the result to the resultValue object
+    var nextTick = function() {
+        if (flow.fiberCount() > 0) { // only yield if there are fibers running
+            //Reset lights every time through the loop such that new async callbacks can be added
+            light = false;
+
+            var ret = Fiber.yield();
+
+            var val = resultHandler(ret);
+            if(ret.key != null){
+                returnValue[ret.key] = val;
+            }
+        }
+    };
+
+
     var convertResult = function(ret, responseFormat){
         var formatted = {};
 
@@ -128,15 +157,7 @@ module.exports = function(fn) {
             //Not supporting the fancy red args for now
 
             while(parallelFinished < parallelCount){
-                //Reset lights every time through the loop such that new async callbacks can be added
-                light = false;
-
-                var ret = Fiber.yield();
-
-                var val = resultHandler(ret);
-                if(ret.key != null){
-                    returnValue[ret.key] = val;
-                }
+                nextTick();
             }
 
             var toReturn;
