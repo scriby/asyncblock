@@ -170,13 +170,13 @@ Call flow.wait() when you want execution to pause until all the asynchronous fun
 
 You may pass a key to flow.add, which will be used when getting the result from flow.wait. For example, calling
 flow.add('key1') and flow.add('key2') would produce a result { key1: value1, key2: value2 }. It is not necessary to
-pass a key to flow.add if you do not need to get the result.
+pass a key to flow.add if you do not need to get the result, or if there is only one result.
 
 If there is only one call to flow.add and no key is passed, the result will be returned as is without the object wrapper.
 
-If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock.
-You only receive from the 2nd arg on from the flow.wait call. If more than one parameter was passed to the callback,
-it will be returned as an array.
+If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock (see error handling section).
+You only receive from the 2nd argument on from the flow.wait call. If more than one parameter was passed to the callback,
+it will be returned as an array (see formatting section).
 
 ## Keeping the stack trace
 
