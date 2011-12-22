@@ -34,10 +34,12 @@ module.exports = function(fn) {
     flow.maxParallel = 0;
 
     // returns the number of currently running fibers
-    flow.fiberCount = function() {
-        return parallelCount - parallelFinished;
-    };
-
+    Object.defineProperty(flow, 'unfinishedCount', {
+        get: function() {
+            return parallelCount - parallelFinished;
+        }
+    });
+    
     flow.add = function(key, responseFormat){
         //Support single argument of responseFormat
         if(key instanceof Array){
@@ -45,9 +47,9 @@ module.exports = function(fn) {
             key = null;
         }
 
-        while (flow.maxParallel > 0 && flow.fiberCount() >= flow.maxParallel) {
+        while (flow.maxParallel > 0 && flow.unfinishedCount >= flow.maxParallel) {
             // too many fibers running.  Yield until the fiber count goes down.
-            nextTick();
+            yieldFiber();
         }
 
         parallelCount++;
@@ -121,8 +123,8 @@ module.exports = function(fn) {
     };
 
     // Yields the current fiber and adds the result to the resultValue object
-    var nextTick = function() {
-        if (flow.fiberCount() > 0) { // only yield if there are fibers running
+    var yieldFiber = function() {
+        if (flow.unfinishedCount > 0) { // only yield if there are fibers running
             //Reset lights every time through the loop such that new async callbacks can be added
             light = false;
 
@@ -157,7 +159,7 @@ module.exports = function(fn) {
             //Not supporting the fancy red args for now
 
             while(parallelFinished < parallelCount){
-                nextTick();
+                yieldFiber();
             }
 
             var toReturn;
