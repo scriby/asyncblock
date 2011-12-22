@@ -394,6 +394,29 @@ asyncblock(function(flow) {
 When calling flow.add, you may pass a format array conditionally. If provided, it will be used to build an object bag
 when returning the results to flow.wait.
 
+## Parallel task rate limiting
+
+In some cases, you may want to run tasks in parallel, but not all of them at once. For example, consider the case of 
+uploading a large number of files to a remote server. Keeping some number of uploads going at once would be a good solution.
+Setting flow.maxParallel makes this easy:
+
+```javascript
+asyncblock(function(flow){
+    flow.maxParallel = 10;
+    
+    for(var i = 0; i < files.length; i++) {
+        uploadFile(files[i], flow.add());
+    }
+    
+    flow.wait(); //Wait for all uploads to finish
+});
+```
+
+When flow.add is called, if 10 or more uploadFile calls have not executed their callbacks yet, 
+execution will yield until one of the callbacks is fired. As soon as the callback is fired, the flow.add call will
+return and the code in the asyncblock will continue to execute. In this way, there will always be a "pool" of 10
+uploads executing, until fewer than 10 tasks remain. The final tasks are waited on by the final flow.wait call.
+
 ## Concurrency
 
 Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
