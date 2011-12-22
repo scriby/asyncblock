@@ -154,7 +154,7 @@ suite.addBatch({
 
                 flow.wait();
 
-                setTimeout(flow.add(), 101);
+                setTimeout(flow.add(), 110);
 
                 flow.wait();
 
@@ -370,6 +370,35 @@ suite.addBatch({
             // t200 < t100 < t350
             assert.greater(result.t100, result.t200);
             assert.greater(result.t350, result.t100);
+        }
+    },
+
+    'When running maxParallel in a loop': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.maxParallel = 10;
+
+                for(var i = 0; i < 105; i++){
+                    if(Math.random() > .5){
+                        immed(flow.add(i));
+                    } else {
+                        delayed(flow.add(i));
+                    }
+                }
+
+                var results = flow.wait();
+                self.callback(null, results);
+            });
+        },
+
+        'All tasks execute': function(results){
+            for(var i = 0; i < 105; i++){
+                if(!(i in results)) {
+                    assert.fail();
+                }
+            }
         }
     }
 });
