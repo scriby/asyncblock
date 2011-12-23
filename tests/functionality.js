@@ -400,6 +400,117 @@ suite.addBatch({
                 }
             }
         }
+    },
+    
+    'When using forceWait to add tasks asyncronously': {
+        topic: function() {
+            var self = this;
+            
+            asyncblock(function(flow) {
+                process.nextTick(function(){
+                    delayed(flow.add('delayed'));
+                    immed(flow.add('immed'));
+
+                    process.nextTick(function(){
+                        flow.doneAdding();
+                    });
+                });
+                
+                var result = flow.forceWait();
+                
+                self.callback(null, result);
+            });
+        },
+        
+        'All tasks are waited on': function(result){
+            assert.deepEqual(result, { delayed: 'delayed', immed: 'immed' });
+        }
+    },
+
+    'When using queue with wait': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.queue('delayed', function(callback){
+                    delayed(callback);
+                });
+
+                flow.queue('immed', function(callback){
+                    immed(callback);
+                });
+
+                var first = flow.wait();
+
+                immed(flow.callback('immed'));
+
+                delayed(flow.callback('delayed1'));
+
+                flow.queue('delayed2', function(callback){
+                    delayed(callback);
+                });
+
+                var second = flow.wait();
+
+                self.callback(null, { first: first, second: second });
+            });
+        },
+
+        'Results are as expected': function(result) {
+            assert.deepEqual(result.first, {
+                delayed: 'delayed',
+                immed: 'immed'
+            });
+
+            assert.deepEqual(result.second, {
+                delayed1: 'delayed',
+                delayed2: 'delayed',
+                immed: 'immed'
+            });
+        }
+    },
+
+    'maxParallel in conjunction with queueAdd': {
+        topic: function() {
+            var self = this;
+
+            asyncblock(function(flow) {
+                flow.maxParallel = 10;
+                var startTime = new Date();
+
+                for(var i = 0; i < 100; i++){
+                    (function(i){
+                        process.nextTick(function(){
+                            flow.queue(i, function(callback){
+                                sleepTest(10, callback);
+                            });
+
+                            if(i === 99){
+                                flow.doneAdding();
+                            }
+                        });
+                    })(i);
+                }
+
+                var result = flow.forceWait();
+                var endTime = new Date();
+
+                result.time = endTime - startTime;
+
+                self.callback(null, result);
+            });
+        },
+
+        'All tasks are waited on': function(results){
+            for(var i = 0; i < 100; i++){
+                if(!(i in results)) {
+                    assert.fail();
+                }
+            }
+
+            //The test should take about 100 ms
+            assert.greater(results.time, 99);
+        }
     }
 });
 

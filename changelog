@@ -1,0 +1,23 @@
+0.7.0
+
+* Added support for asynchronously adding tasks via flow.forceWait, flow.queue, and flow.doneAdding
+
+0.6.0
+
+* Added support for throttling active tasks via maxParallel
+
+0.5.0
+
+* Added support for keeping the call stack across async boundary
+
+0.4.0
+
+* Fix memory leak when creating an asyncblock
+
+0.0.7
+
+* Performance improvements
+
+0.0.6
+
+* Adding flow.errorCallback for simplified error handling

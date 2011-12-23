@@ -7,10 +7,10 @@ module.exports = function(fn) {
     var light = true;
     var errorCallbackCalled = false;
 
-	var fiber = Fiber(function() {
-		try {
-			fn(flow);
-		} catch(e) {
+    var fiber = Fiber(function() {
+        try {
+            fn(flow);
+        } catch(e) {
             if(flow.errorCallback){
                 if(!errorCallbackCalled){
                     errorCallbackCalled = true;
@@ -20,12 +20,14 @@ module.exports = function(fn) {
             } else {
                 throw e;
             }
-		} finally {
+        } finally {
             //Prevent memory leak
             fn = null;
             fiber = null;
         }
-	});
+    });
+
+    var taskQueue = [];
 
     var parallelCount = 0;
     var parallelFinished = 0;
@@ -39,8 +41,14 @@ module.exports = function(fn) {
             return parallelCount - parallelFinished;
         }
     });
-    
-    flow.add = function(key, responseFormat){
+
+    var forceWait = false;
+
+    var shouldYield = function() {
+        return parallelFinished < parallelCount || forceWait || taskQueue.length > 0;
+    };
+
+    flow.add = flow.callback = function(key, responseFormat){
         //Support single argument of responseFormat
         if(key instanceof Array){
             responseFormat = key;
@@ -53,7 +61,7 @@ module.exports = function(fn) {
         }
 
         parallelCount++;
-        
+
         return function(){
             parallelFinished++;
 
@@ -78,8 +86,35 @@ module.exports = function(fn) {
         };
     };
 
+    flow.queue = function(key, responseFormat, toExecute) {
+        //Support single argument of responseFormat
+        if(key instanceof Array){
+            responseFormat = key;
+            key = null;
+        }
+
+        if(typeof key === 'function') {
+            toExecute = key;
+            key = null;
+        } else if(typeof responseFormat === 'function') {
+            toExecute = responseFormat;
+            responseFormat = null;
+        }
+
+        taskQueue.push({
+            key: key,
+            responseFormat: responseFormat,
+            toExecute: toExecute
+        });
+
+        if(!light){
+            light = true;
+            fiber.run();
+        }
+    };
+
     var errorHandler = function(ret){
-        if(ret[0]){
+        if(ret && ret[0]){
             //Make sure we don't call the error callback more than once
             if(!errorCallbackCalled){
                 errorCallbackCalled = true;
@@ -108,6 +143,10 @@ module.exports = function(fn) {
     };
 
     var resultHandler = function(ret){
+        if(ret == null){
+            return ret;
+        }
+
         errorHandler(ret);
 
         var responseFormat = ret.responseFormat;
@@ -122,21 +161,29 @@ module.exports = function(fn) {
         }
     };
 
+    var runTaskQueue = function(){
+        //Check if there are any new queued tasks to add
+        while(taskQueue.length > 0) {
+            var firstTask = taskQueue.splice(0, 1)[0];
+
+            firstTask.toExecute(flow.add(firstTask.key, firstTask.responseFormat));
+        }
+    };
+
     // Yields the current fiber and adds the result to the resultValue object
     var yieldFiber = function() {
-        if (flow.unfinishedCount > 0) { // only yield if there are fibers running
-            //Reset lights every time through the loop such that new async callbacks can be added
-            light = false;
+        runTaskQueue();
 
-            var ret = Fiber.yield();
+        light = false;
+        var ret = Fiber.yield();
 
+        if(ret != null) {
             var val = resultHandler(ret);
             if(ret.key != null){
                 returnValue[ret.key] = val;
             }
         }
     };
-
 
     var convertResult = function(ret, responseFormat){
         var formatted = {};
@@ -154,33 +201,53 @@ module.exports = function(fn) {
         return formatted;
     };
 
-	flow.wait = function() {
-        if(parallelCount > 0){
-            //Not supporting the fancy red args for now
-
-            while(parallelFinished < parallelCount){
-                yieldFiber();
-            }
-
-            var toReturn;
-
-            //If add was called once and no parameter name was set, just return the value as is
-            if(parallelCount === 1 && '__defaultkey__' in returnValue) {
-                toReturn = returnValue.__defaultkey__;
-            } else {
-                delete returnValue.__defaultkey__;
-
-                toReturn = returnValue;
-            }
-
-            //Prepare for the next run
-            parallelFinished = 0;
-            parallelCount = 0;
-            returnValue = {};
-
-            return toReturn;
+    var wait = function() {
+        while(shouldYield()){
+            yieldFiber();
         }
-	};
 
-	fiber.run();
+        var toReturn;
+
+        //If add was called once and no parameter name was set, just return the value as is
+        if(parallelCount === 1 && '__defaultkey__' in returnValue) {
+            toReturn = returnValue.__defaultkey__;
+        } else {
+            delete returnValue.__defaultkey__;
+
+            toReturn = returnValue;
+        }
+
+        //Prepare for the next run
+        parallelFinished = 0;
+        parallelCount = 0;
+        returnValue = {};
+
+        return toReturn;
+    };
+
+    flow.wait = function() {
+        return wait();
+    };
+    
+    flow.forceWait = function() {
+        forceWait = true;
+
+        return wait();
+    };
+
+    flow.doneAdding = function(){
+        if(!forceWait) {
+            throw new Error('doneAdding should only be called in conjunction with forceWait');
+        }
+
+        forceWait = false;
+
+        //If currently yielding, need to run again
+        if(!light) {
+            light = true;
+            fiber.run();
+        }
+    };
+
+    fiber.run();
 };
