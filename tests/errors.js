@@ -112,4 +112,34 @@ suite.addBatch({
     }
 });
 
+suite.addBatch({
+    'When ignoring errors': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+
+                asyncTickError(flow.addIgnoreError());
+                asyncError(flow.callbackIgnoreError());
+                flow.wait();
+
+                flow.queueIgnoreError(function(callback){
+                    asyncTickError(callback);
+                });
+                flow.queueIgnoreError(function(callback){
+                    asyncError(callback);
+                });
+                flow.wait();
+
+                self.callback();
+            });
+        },
+
+        'Error is ignored': function(err, result){
+            assert.isNull(err);
+        }
+    }
+});
+
 suite.export(module);
