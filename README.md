@@ -26,10 +26,11 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 * Write async code in synchronous style without blocking
 * Effortlessly combine serial and parallel operations with minimal boilerplate
 * Produce code which is easier to read, reason about, and modify
+    * Compared to flow control libraries, asyncblock makes it easy to share data between async steps. There's no need to create variables in an outer scope or use "waterfall".
 * Simplify error handling practices
 * Improve debugging by not losing stack traces across async calls
-    * Line numbers don't change. What's in the stack trace maps directly to your code
-    * If using a debugger, it's easy to step through asyncblock code (compared to async libraries)
+    * Line numbers don't change. What's in the stack trace maps directly to your code (You may lose this with CPS transforms)
+    * If using a debugger, it's easy to step line-by-line through asyncblock code (compared to async libraries)
 
 ### What are the risks?
 
@@ -40,143 +41,90 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
      * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
 * When new versions of node (V8) come out, you may have to wait longer to upgrade if the fibers code needs to be adjusted to work with it 
 
-## Compared to other solutions...
+## Examples
 
-A sample program in pure node, using the async library, and using asyncblock + fibers.
+A few quick examples to show off the functionality of asyncblock:
 
-### Pure node
-
-```javascript
-
-function example(callback){
-    var finishedCount = 0;
-    var fileContents = [];
-
-    var continuation = function(){
-        if(finishedCount < 2){
-            return;
-        }
-
-        fs.writeFile('path3', fileContents[0], function(err) {
-            if(err) {
-                throw new Error(err);
-            }
-
-            fs.readFile('path3', 'utf8', function(err, data){ 
-                console.log(data);
-                console.log('all done');
-            });
-        });
-    };
-
-    fs.readFile('path1', 'utf8', function(err, data) {
-        if(err) {
-            throw new Error(err);
-        }
-
-        fnishedCount++;
-        fileContents[0] = data;
-
-        continuation();
-    });
-
-    fs.readFile('path2', 'utf8', function(err, data) {
-        if(err) {
-            throw new Error(err);
-        }
-
-        fnishedCount++;
-        fileContents[1] = data;
-
-        continuation();
-    });
-}
-```
-
-### Using async
+### Sleeping in series
 
 ```javascript
-
-var async = require('async');
-
-var fileContents = [];
-
-async.series([
-    function(callback){
-        async.parallel([
-            function(callback) {
-                fs.readFile('path1', 'utf8', callback);
-            },
-
-            function(callback) {
-                fs.readFile('path2', 'utf8', callback);
-            }
-        ],
-            function(err, results){
-                fileContents = results;                                    
-                callback(err);
-            }
-        );
-    },
-
-    function(callback) {
-        fs.writeFile('path3', fileContents[0], callback);
-    },
-
-    function(callback) {
-        fs.readFile('path3', 'utf8', function(err, data){
-            console.log(data);
-            callback(err);
-        });
-    }
-],
-    function(err) {
-        if(err) {
-            throw new Error(err);
-        }
-        
-        console.log('all done');
-    }
-);
-```
-
-### Using asyncblock + fibers
-
-```javascript
-
-var asyncblock = require('asyncblock');
-
 asyncblock(function(flow){
-    fs.readFile('path1', 'utf8', flow.add('first'));
-    fs.readFile('path2', 'utf8', flow.add('second'));
+    console.time('time');
 
-    var fileContents = flow.wait();
+    setTimeout(flow.add(), 1000);
+    flow.wait(); //Wait for the first setTimeout to finish
+
+    setTimeout(flow.add(), 2000);
+    flow.wait(); //Wait for the second setTimeout to finish
+
+    console.timeEnd('time'); //3 seconds
+});
+```
+
+### Sleeping in parallel
+
+```javascript
+asyncblock(function(flow){
+    console.time('time');
+
+    setTimeout(flow.add(), 1000);
+    setTimeout(flow.add(), 2000);
+    flow.wait(); //Wait for both setTimeouts to finish
+
+    console.timeEnd('time'); //2 seconds
+});
+```
+
+### Trapping results
+
+```javascript
+asyncblock(function(flow) {
+    fs.readFile(path1, 'utf8', flow.add('firstFile')); //Store the result of the first read under the key "firstFile"                                        
+    fs.readFile(path2, 'utf8', flow.add('secondFile')); //Store the result of the second read under the key "secondFile"
+    var files = flow.wait(); //Both file reads are running in parallel. Wait for them to finish.
     
-    fs.writeFile('path3', fileContents.first, flow.add());
-    flow.wait();
+    fs.writeFile(path3, 'utf8', files.firstFile + files.secondFile);
+    flow.wait(); //Wait for the combined contents to be written to a third file
+    
+    fs.readFile(path4, 'utf8', flow.add()); //If no key is passed...
+    var contents = flow.wait(); //That object will get returned by the flow.wait call
+    
+    console.log(contents);
+});
+```
 
-    fs.readFile('path3', 'utf8', flow.add());
-    var data = flow.wait();
+### Error handling
 
-    console.log(data);
-    console.log('all done');
+```javascript
+var asyncTask = function(callback) {
+    asyncblock(function(flow) {
+        flow.errorCallback = callback; //Setting the errorCallback is the easiest way to perform error handling. If erroCallback isn't set, and an error occurs, it will be thrown instead of returned to the callback
+        
+        fs.readFile(path, 'utf8', flow.add()); //If readFile encountered an error, it would automatically get passed to the callback
+        var contents = flow.wait();
+        
+        console.log(contents); //If an error occured above, this code won't run
+    });
 });
 ```
 
 ## flow.add and flow.wait
 
-Pass the result of flow.add() as a callback to asynchronous functions. Each usage of flow.add() will run in parallel.
-Call flow.wait() when you want execution to pause until all the asynchronous functions are done.
+Pass the result of flow.add() as a callback to asynchronous functions. All the code you call before calling flow.wait
+will run in parallel. When flow.wait is called, execution pauses until all the asynchronous functions are done. Note
+that the event loop does not pause -- other tasks in node will continue to execute as if you were making an async call.
 
-You may pass a key to flow.add, which will be used when getting the result from flow.wait. For example, calling
+You may pass a key to flow.add, which can be used to get the result from flow.wait. For example, calling
 flow.add('key1') and flow.add('key2') would produce a result { key1: value1, key2: value2 }. It is not necessary to
 pass a key to flow.add if you do not need to get the result, or if there is only one result.
 
 If there is only one call to flow.add and no key is passed, the result will be returned as is without the object wrapper.
 
-If any of the asynchronous callbacks pass an error as the first argument, it will be thrown as an exception by asyncblock (see error handling section).
-You only receive from the 2nd argument on from the flow.wait call. If more than one parameter was passed to the callback,
-it will be returned as an array (see formatting section).
+If an error occured in one of the async calls, code execution will stop at that point. The error handling behavior depends
+on whether flow.errorCallback was set. See the error handling section for more information.
+
+When getting results from the flow.wait call, all but the first argument (the error) will be provided. 
+If more than one parameter was passed to the callback, it will be returned as an array (see formatting section for more details).
 
 ## Keeping the stack trace
 
@@ -625,30 +573,124 @@ Just as flow.callback is an alias for flow.add, flow.callbackIgnoreError is an a
 Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
 how the code can be written to manage the asynchronous control flow.
 
-## Some more examples
+## Compared to other solutions...
+
+A sample program in pure node, using the async library, and using asyncblock + fibers.
+
+### Pure node
 
 ```javascript
-asyncblock(function(flow){
-    console.time('time');
 
-    setTimeout(flow.add(), 1000);
-    flow.wait();
+function example(callback){
+    var finishedCount = 0;
+    var fileContents = [];
 
-    setTimeout(flow.add(), 2000);
-    flow.wait();
+    var continuation = function(){
+        if(finishedCount < 2){
+            return;
+        }
 
-    console.timeEnd('time'); //3 seconds
-});
+        fs.writeFile('path3', fileContents[0], function(err) {
+            if(err) {
+                throw new Error(err);
+            }
+
+            fs.readFile('path3', 'utf8', function(err, data){ 
+                console.log(data);
+                console.log('all done');
+            });
+        });
+    };
+
+    fs.readFile('path1', 'utf8', function(err, data) {
+        if(err) {
+            throw new Error(err);
+        }
+
+        fnishedCount++;
+        fileContents[0] = data;
+
+        continuation();
+    });
+
+    fs.readFile('path2', 'utf8', function(err, data) {
+        if(err) {
+            throw new Error(err);
+        }
+
+        fnishedCount++;
+        fileContents[1] = data;
+
+        continuation();
+    });
+}
 ```
+
+### Using async
 
 ```javascript
-asyncblock(function(flow){
-    console.time('time');
 
-    setTimeout(flow.add(), 1000);
-    setTimeout(flow.add(), 2000);
+var async = require('async');
+
+var fileContents = [];
+
+async.series([
+    function(callback){
+        async.parallel([
+            function(callback) {
+                fs.readFile('path1', 'utf8', callback);
+            },
+
+            function(callback) {
+                fs.readFile('path2', 'utf8', callback);
+            }
+        ],
+            function(err, results){
+                fileContents = results;                                    
+                callback(err);
+            }
+        );
+    },
+
+    function(callback) {
+        fs.writeFile('path3', fileContents[0], callback);
+    },
+
+    function(callback) {
+        fs.readFile('path3', 'utf8', function(err, data){
+            console.log(data);
+            callback(err);
+        });
+    }
+],
+    function(err) {
+        if(err) {
+            throw new Error(err);
+        }
+        
+        console.log('all done');
+    }
+);
+```
+
+### Using asyncblock + fibers
+
+```javascript
+
+var asyncblock = require('asyncblock');
+
+asyncblock(function(flow){
+    fs.readFile('path1', 'utf8', flow.add('first'));
+    fs.readFile('path2', 'utf8', flow.add('second'));
+
+    var fileContents = flow.wait();
+    
+    fs.writeFile('path3', fileContents.first, flow.add());
     flow.wait();
 
-    console.timeEnd('time'); //2 seconds
+    fs.readFile('path3', 'utf8', flow.add());
+    var data = flow.wait();
+
+    console.log(data);
+    console.log('all done');
 });
-```
