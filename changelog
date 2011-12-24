@@ -1,3 +1,7 @@
+0.7.5
+
+* New functions: addIgnoreError, callbackIgnoreError, queueIgnoreError for cases where you want to explicitly ignore errors
+
 0.7.1
 
 * Performance optimization
