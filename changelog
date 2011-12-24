@@ -1,3 +1,7 @@
+0.7.1
+
+* Performance optimization
+
 0.7.0
 
 * Added support for asynchronously adding tasks via flow.forceWait, flow.queue, and flow.doneAdding
