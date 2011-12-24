@@ -486,7 +486,7 @@ asyncblock(function(flow) {
    process.nextTick(function(){
        asyncblock(function(innerFlow){
            setTimeout(innerFlow.add(), 1000); 
-           flow.wait(); //Wait on the setTimout call
+           innerFlow.wait(); //Wait on the setTimout call
            
            flow.doneAdding(); //Tell the outer fiber that it can stop waiting
        });
