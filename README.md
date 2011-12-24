@@ -23,11 +23,12 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 
 ### Why should I use asyncblock?
 
-* Write async code in synchronous style without blocking
+* Write async code in synchronous style without blocking the event loop
 * Effortlessly combine serial and parallel operations with minimal boilerplate
 * Produce code which is easier to read, reason about, and modify
     * Compared to flow control libraries, asyncblock makes it easy to share data between async steps. There's no need to create variables in an outer scope or use "waterfall".
 * Simplify error handling practices
+    * If an error occurs in an async step, automatically call your callback with the error, or throw an Error
 * Improve debugging by not losing stack traces across async calls
     * Line numbers don't change. What's in the stack trace maps directly to your code (You may lose this with CPS transforms)
     * If using a debugger, it's easy to step line-by-line through asyncblock code (compared to async libraries)
