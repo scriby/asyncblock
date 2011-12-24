@@ -23,26 +23,11 @@ Flow.prototype.__defineGetter__("unfinishedCount", function(){
     return this._parallelCount - this._parallelFinished;
 });
 
-Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
-    var self = this;
-
-    //Support single argument of responseFormat
-    if(key instanceof Array){
-        responseFormat = key;
-        key = null;
-    }
-
-    while (this.maxParallel > 0 && this.unfinishedCount >= this.maxParallel) {
-        // too many fibers running.  Yield until the fiber count goes down.
-        yieldFiber(this);
-    }
-
-    this._parallelCount++;
-
+var callbackHandler = function(self, key, responseFormat){
     return function(){
-        self._parallelFinished++;
-
         var args = Array.prototype.slice.call(arguments);
+
+        self._parallelFinished++;
 
         if(self._parallelCount === 1 && key == null){
             key = '__defaultkey__';
@@ -60,7 +45,26 @@ Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
 
             self._fiber.run(args);
         }
-    };
+    }
+};
+
+Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
+    var self = this;
+
+    //Support single argument of responseFormat
+    if(key instanceof Array){
+        responseFormat = key;
+        key = null;
+    }
+
+    while (this.maxParallel > 0 && this.unfinishedCount >= this.maxParallel) {
+        // too many fibers running.  Yield until the fiber count goes down.
+        yieldFiber(this);
+    }
+
+    this._parallelCount++;
+
+    return callbackHandler(self, key, responseFormat);
 };
 
 var runTaskQueue = function(self){
