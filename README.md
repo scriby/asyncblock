@@ -28,6 +28,8 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 * Produce code which is easier to read, reason about, and modify
 * Simplify error handling practices
 * Improve debugging by not losing stack traces across async calls
+    * Line numbers don't change. What's in the stack trace maps directly to your code
+    * If using a debugger, it's easy to step through asyncblock code (compared to async libraries)
 
 ### What are the risks?
 
@@ -38,7 +40,7 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
      * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
 * When new versions of node (V8) come out, you may have to wait longer to upgrade if the fibers code needs to be adjusted to work with it 
 
-### Sample
+## Compared to other solutions...
 
 A sample program in pure node, using the async library, and using asyncblock + fibers.
 
@@ -161,9 +163,7 @@ asyncblock(function(flow){
 });
 ```
 
-## Notes
-
-### flow.add and flow.wait
+## flow.add and flow.wait
 
 Pass the result of flow.add() as a callback to asynchronous functions. Each usage of flow.add() will run in parallel.
 Call flow.wait() when you want execution to pause until all the asynchronous functions are done.
@@ -593,6 +593,32 @@ asyncblock(function(flow) {
     flow.wait();
 });
 ```
+
+## Ignoring errors
+
+What if you don't care if an error occurs in a particular step? New in 0.7.5, you may use addIgnoreError or queueIgnoreError.
+
+```javascript
+asyncblock(function(flow){
+    fs.writeFile('path', 'utf8', contents, flow.addIgnoreError());                                        
+    flow.wait();
+    
+    //This code will continue to run even if writeFile encountered an error
+});
+```
+
+```javascript
+asyncblock(function(flow){
+    flow.queueIgnoreError(function(callback){
+        fs.writeFile('path', 'utf8', contents, callback);                                        
+    });
+    flow.wait();
+    
+    //This code will continue to run even if writeFile encountered an error
+});
+```
+
+Just as flow.callback is an alias for flow.add, flow.callbackIgnoreError is an alias for flow.addIgnoreError.
 
 ## Concurrency
 
