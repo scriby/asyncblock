@@ -13,6 +13,7 @@ var Flow = function(fiber) {
     this._returnValue = {};
 
     this._errorCallbackCalled = false;
+    this.errorCallback = null;
 
     // max number of parallel tasks. maxParallel <= 0 means no limit
     this.maxParallel = 0;
