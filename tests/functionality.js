@@ -458,7 +458,12 @@ suite.addBatch({
 
                 var second = flow.wait();
 
-                self.callback(null, { first: first, second: second });
+                flow.queue({ key: 'delayed3', timeout: 1000 }, function(callback){
+                    delayed(callback);
+                });
+                var third = flow.wait();
+
+                self.callback(null, { first: first, second: second, third: third });
             });
         },
 
@@ -473,6 +478,10 @@ suite.addBatch({
                 delayed2: 'delayed',
                 immed: 'immed'
             });
+
+            assert.deepEqual(result.third, {
+                delayed3: 'delayed'
+            })
         }
     },
 

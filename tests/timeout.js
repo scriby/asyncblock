@@ -125,6 +125,81 @@ suite.addBatch({
         'It should not throw an error': function(){
 
         }
+    },
+
+    'When running a 200ms task with a 100ms timeout, task.timeoutIsError = false': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+                flow.taskTimeout = 100;
+
+                sleep(200, flow.add({ timeoutIsError: false }));
+                flow.wait();
+
+                flow.queue({ timeoutIsError: false }, function(callback){
+                    setTimeout(callback, 200);
+                });
+                flow.wait();
+
+                self.callback();
+            });
+        },
+
+        'It should not throw an error': function(){
+
+        }
+    },
+
+    'When running a 200ms task with a 100ms timeout, flow.timeoutIsError = false': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+                flow.taskTimeout = 100;
+                flow.timeoutIsError = false;
+
+                sleep(200, flow.add());
+                flow.wait();
+
+                flow.queue(function(callback){
+                    setTimeout(callback, 200);
+                });
+                flow.wait();
+
+                self.callback();
+            });
+        },
+
+        'It should not throw an error': function(){
+
+        }
+    },
+
+    'When running a 200ms task with a 100ms timeout, using queue': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+                flow.taskTimeout = 100;
+
+                flow.queue(function(callback){
+                    setTimeout(callback, 200);
+                });
+
+                flow.wait();
+
+                self.callback();
+            });
+        },
+
+        'The task times out': function(err, result){
+            assert.isTrue(err.taskTimedOut);
+            assert.lesser(err.taskRunTime, 125);
+        }
     }
 });
 

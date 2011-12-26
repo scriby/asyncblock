@@ -1,3 +1,8 @@
+0.9.2
+
+* Allow timeouts to not throw errors by passing timeoutIsError: false to add or queue, or set flow.timeoutIsError = false
+* Allow object bag syntax for flow.queue as well, to specify parameters key, responseFormat, timeout, timeoutIsError
+
 0.9.1
 
 * Fix bug: When waiting on a task by key that returns a falsey value, the fiber yielded forever

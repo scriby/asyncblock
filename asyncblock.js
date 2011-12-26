@@ -18,6 +18,7 @@ var Flow = function(fiber) {
     this.errorCallback = null;
 
     this.taskTimeout = null;
+    this.timeoutIsError = null;
 
     // max number of parallel tasks. maxParallel <= 0 means no limit
     this.maxParallel = 0;
@@ -33,6 +34,10 @@ Flow.prototype.__defineGetter__("unfinishedCount", function(){
 var callbackHandler = function(self, task){
     if(self.taskTimeout != null && task.timeout == null){
         task.timeout = self.taskTimeout;
+    }
+
+    if(self.timeoutIsError != null && task.timeoutIsError == null){
+        task.timeoutIsError = self.timeoutIsError;
     }
 
     var callbackCalled = false;
@@ -84,7 +89,11 @@ var callbackHandler = function(self, task){
 
                 task._flow.emit('taskTimeout', { key: task.key, runtime: runtime });
 
-                task.callback(timeoutError);
+                if(task.timeoutIsError == null || task.timeoutIsError === true) {
+                    task.callback(timeoutError);
+                } else {
+                    task.callback();
+                }
             },
 
             task.timeout
@@ -111,6 +120,7 @@ var addTask = function(self, task){
 
 var parseAddArgs = function(key, responseFormat){
     var timeout;
+    var timeoutIsError;
 
     //Support single argument of responseFormat
     if(key instanceof Array){
@@ -122,12 +132,14 @@ var parseAddArgs = function(key, responseFormat){
         key = obj.key;
         responseFormat = obj.responseFormat;
         timeout = obj.timeout;
+        timeoutIsError = obj.timeoutIsError;
     }
 
     return {
         key: key,
         responseFormat: responseFormat,
-        timeout: timeout
+        timeout: timeout,
+        timeoutIsError: timeoutIsError
     };
 };
 
@@ -242,6 +254,9 @@ var shouldYield = function(self) {
 };
 
 var parseQueueArgs = function(key, responseFormat, toExecute){
+    var timeout;
+    var timeoutIsError;
+
     //Support single argument of responseFormat
     if(key instanceof Array){
         responseFormat = key;
@@ -256,10 +271,22 @@ var parseQueueArgs = function(key, responseFormat, toExecute){
         responseFormat = null;
     }
 
+    if(Object.prototype.toString.call(key) === '[object Object]'){
+        var obj = key;
+
+        key = obj.key;
+        responseFormat = obj.responseFormat;
+        //toExecute would be set from if block above
+        timeout = obj.timeout;
+        timeoutIsError = obj.timeoutIsError;
+    }
+
     return {
         key: key,
         responseFormat: responseFormat,
-        toExecute: toExecute
+        toExecute: toExecute,
+        timeout: timeout,
+        timeoutIsError: timeoutIsError
     };
 };
 
