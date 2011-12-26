@@ -495,6 +495,22 @@ asyncblock(function(flow){
 Even if timeoutIsError is set to false, the taskTimeout event will still be emitted. Also, flow.wait will return undefined
 for the tasks that timed out.
 
+### Usage with queue
+
+A timeout may be explicitly defined on a queue call with the following syntax:
+
+```javascript
+asyncblock(function(flow){
+    flow.queue({ key: 'timer', timeout: 1000, timeoutIsError: false}, function(callback){
+        setTimeout(callback, 2000);
+    });
+    
+    flow.wait(); //The fiber will yield here for 1 second, then continue
+    
+    //Code here will run
+});
+```
+
 ## Adding tasks asynchronously
 
 Version 0.7 adds the ability to add tasks asynchronously. Consider the following example:
