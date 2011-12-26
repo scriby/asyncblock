@@ -83,6 +83,8 @@ asyncblock(function(flow) {
     fs.readFile(path1, 'utf8', flow.add('firstFile')); //Store the result of the first read under the key "firstFile"                                        
     fs.readFile(path2, 'utf8', flow.add('secondFile')); //Store the result of the second read under the key "secondFile"
     var files = flow.wait(); //Both file reads are running in parallel. Wait for them to finish.
+    
+    
     fs.writeFile(path3, 'utf8', files.firstFile + files.secondFile);
     flow.wait(); //Wait for the combined contents to be written to a third file
     
