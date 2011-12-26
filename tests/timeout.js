@@ -105,8 +105,27 @@ suite.addBatch({
             assert.isTrue(err.taskTimedOut);
             assert.lesser(err.taskRunTime, 125);
         }
-    }
+    },
 
+    'When running a 200ms task with a 100ms timeout, ignoring the error': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+                flow.taskTimeout = 100;
+
+                sleep(200, flow.addIgnoreError());
+                flow.wait();
+
+                self.callback();
+            });
+        },
+
+        'It should not throw an error': function(){
+
+        }
+    }
 });
 
 suite.export(module);

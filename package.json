@@ -1,6 +1,6 @@
 {
 	"name": "asyncblock",
-	"version": "0.9.0",
+	"version": "0.9.1",
 	"description": "A simple and powerful abstraction of node-fibers",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],

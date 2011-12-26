@@ -5,6 +5,12 @@ var asyncblock = require('../asyncblock.js');
 
 var suite = vows.describe('functionality');
 
+var noParams = function(callback){
+    process.nextTick(function(){
+        callback();
+    });
+};
+
 var immed = function(callback){
     callback(null, 'immed');
 };
@@ -538,6 +544,9 @@ suite.addBatch({
 
                 result.delayed2 = flow.wait();
 
+                noParams(flow.add('noParams'));
+                result.noParams = flow.wait('noParams');
+
                 self.callback(null,result);
             });
         },
@@ -552,6 +561,8 @@ suite.addBatch({
             assert.equal(result.delayed3, 'delayed');
 
             assert.deepEqual(result.delayed2, { delayed2: 'delayed'});
+
+            assert.equal(result.noParams, undefined);
         }
     },
 

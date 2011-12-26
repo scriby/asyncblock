@@ -311,12 +311,11 @@ var wait = function(self) {
 };
 
 var waitForKey = function(self, key){
-    var result = self._returnValue[key];
-
-    while(result == null) {
+    while(!self._returnValue.hasOwnProperty(key)) {
         yieldFiber(self);
-        result = self._returnValue[key];
     }
+
+    var result = self._returnValue[key];
 
     //Clean up
     delete self._returnValue[key];

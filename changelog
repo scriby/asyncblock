@@ -1,3 +1,7 @@
+0.9.1
+
+* Fix bug: When waiting on a task by key that returns a falsey value, the fiber yielded forever
+
 0.9.0
 
 * flow.taskTimeout can be set, which will prevent a task from running for more than the specified number of milliseconds
