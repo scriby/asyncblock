@@ -511,6 +511,48 @@ suite.addBatch({
             //The test should take about 100 ms
             assert.greater(results.time, 99);
         }
+    },
+
+    'When waiting on specific keys': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                var result = {};
+
+                delayed(flow.add('delayed'));
+                result.delayed = flow.wait('delayed');
+
+                process.nextTick(function(){
+                    delayed(flow.add('delayed1'));
+                });
+
+                result.delayed1 = flow.wait('delayed1');
+
+                immed(flow.add());
+                result.immed = flow.wait();
+
+                delayed(flow.add('delayed2'));
+                delayed(flow.add('delayed3'));
+                result.delayed3 = flow.wait('delayed3');
+
+                result.delayed2 = flow.wait();
+
+                self.callback(null,result);
+            });
+        },
+
+        'Results are as expected': function(result){
+            assert.equal(result.delayed, 'delayed');
+
+            assert.equal(result.delayed1, 'delayed');
+
+            assert.equal(result.immed, 'immed');
+
+            assert.equal(result.delayed3, 'delayed');
+
+            assert.deepEqual(result.delayed2, { delayed2: 'delayed'});
+        }
     }
 });
 

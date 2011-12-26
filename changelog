@@ -1,3 +1,7 @@
+0.8.0
+
+* Allow an argument to be passed to flow.wait to wait on a single key
+
 0.7.5
 
 * New functions: addIgnoreError, callbackIgnoreError, queueIgnoreError for cases where you want to explicitly ignore errors

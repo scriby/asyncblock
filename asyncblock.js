@@ -249,8 +249,28 @@ var wait = function(self) {
     return toReturn;
 };
 
-Flow.prototype.wait = function() {
-    return wait(this);
+var waitForKey = function(self, key){
+    var result = self._returnValue[key];
+
+    while(result == null) {
+        yieldFiber(self);
+        result = self._returnValue[key];
+    }
+
+    //Clean up
+    delete self._returnValue[key];
+    self._parallelCount--;
+    self._parallelFinished--;
+
+    return result;
+};
+
+Flow.prototype.wait = function(key) {
+    if(key != null){
+        return waitForKey(this, key);
+    } else {
+        return wait(this);
+    }
 };
 
 Flow.prototype.forceWait = function() {
