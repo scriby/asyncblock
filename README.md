@@ -103,6 +103,8 @@ asyncblock(function(flow) {
     fs.readFile(path7, 'utf8', flow.add('firstFile'));
     fs.readFile(path8, 'utf8', flow.add('secondFile'));
     fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Equivalent to first example, but more concise
+    flow.wait(); //Wait for the combined contents to be written to a third file
+
 });
 ```
 
