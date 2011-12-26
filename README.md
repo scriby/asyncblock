@@ -181,8 +181,9 @@ asyncblock(function(flow){
 
 ## Keeping the stack trace
 
-To maintain the stack trace across async calls, the only thing you have to do is use an Error object (instead of a string)
-when calling a callback with an error. Thrown Errors will automatically get the previous stack trace appended to the stack.
+To maintain the stack trace across async calls, you don't have to do anything special. Note that callbacks which receive
+an error will have the first argument converted into an actual Error object (for example, if a string was passed).
+Thrown Errors will automatically get the previous stack trace appended to the stack.
 
 For example:
 
