@@ -200,6 +200,28 @@ suite.addBatch({
             assert.isTrue(err.taskTimedOut);
             assert.lesser(err.taskRunTime, 125);
         }
+    },
+
+    'When running a task that times out with an explicit key wait': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+                flow.taskTimeout = 100;
+
+                sleep(200, flow.add('timer'));
+
+                flow.wait('timer');
+
+                self.callback();
+            });
+        },
+
+        'The task times out': function(err, result){
+            assert.isTrue(err.taskTimedOut);
+            assert.lesser(err.taskRunTime, 125);
+        }
     }
 });
 
