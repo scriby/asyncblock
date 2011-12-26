@@ -99,9 +99,9 @@ asyncblock(function(flow) {
     console.log(flow.wait('contents2'); //Passing a key to flow.wait will wait on just that task
     var contents1 = flow.wait('contents1'); //Wait on the result of contents2 first, then contents1
     
+    
     fs.readFile(path7, 'utf8', flow.add('firstFile'));
     fs.readFile(path8, 'utf8', flow.add('secondFile'));
-
     fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Equivalent to first example, but more concise
 });
 ```
