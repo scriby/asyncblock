@@ -1,3 +1,10 @@
+0.9.0
+
+* flow.taskTimeout can be set, which will prevent a task from running for more than the specified number of milliseconds
+* If a task's callback is called more than once, an Error will be thrown. This can help point out bugs in user code.
+* If a task returned an error that is not of type Error, it is automatically converted. This will help keep call stack information when using system libraries that return strings
+* An object bag may be passed to flow.add to specify parameters key, responseFormat, and timeout
+
 0.8.0
 
 * Allow an argument to be passed to flow.wait to wait on a single key

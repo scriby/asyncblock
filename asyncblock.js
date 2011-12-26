@@ -1,4 +1,6 @@
 require('fibers');
+var events = require('events');
+var util = require('util');
 
 var Flow = function(fiber) {
     this._parallelCount = 0;
@@ -15,9 +17,13 @@ var Flow = function(fiber) {
     this._errorCallbackCalled = false;
     this.errorCallback = null;
 
+    this.taskTimeout = null;
+
     // max number of parallel tasks. maxParallel <= 0 means no limit
     this.maxParallel = 0;
 };
+
+util.inherits(Flow, events.EventEmitter);
 
 // returns the number of currently running fibers
 Flow.prototype.__defineGetter__("unfinishedCount", function(){
@@ -25,7 +31,27 @@ Flow.prototype.__defineGetter__("unfinishedCount", function(){
 });
 
 var callbackHandler = function(self, task){
-    return function(){
+    if(self.taskTimeout != null && task.timeout == null){
+        task.timeout = self.taskTimeout;
+    }
+
+    var callbackCalled = false;
+
+    task.callback = function(){
+        if(callbackCalled){
+            if(task.timedOut) {
+                return; //If the task timed out, it's likely the callback will be called twice. Once by the timeout code, and once by the task when it eventually finishes
+            } else {
+                throw new Error('Task (' + task.key + ') callback called twice!');
+            }
+        }
+
+        callbackCalled = true; //Prevent this callback from getting called again
+
+        if(task.timeoutId) {
+            clearTimeout(task.timeoutId);
+        }
+
         var args = Array.prototype.slice.call(arguments);
 
         self._parallelFinished++;
@@ -44,10 +70,35 @@ var callbackHandler = function(self, task){
             self._light = true;
             self._fiber.run(task);
         }
+    };
+
+    if(task.timeout != null){
+        task.timeoutId = setTimeout(
+            function(){
+                var runtime = (new Date()) - task.startTime;
+
+                task.timedOut = true;
+                var timeoutError = new Error('Timeout exceeded for task (' + task.key + ') after ' + runtime + 'ms');
+                timeoutError.taskTimedOut = true;
+                timeoutError.taskRunTime = runtime;
+
+                task._flow.emit('taskTimeout', { key: task.key, runtime: runtime });
+
+                task.callback(timeoutError);
+            },
+
+            task.timeout
+        );
     }
+
+    task.startTime = new Date();
+
+    return task.callback;
 };
 
 var addTask = function(self, task){
+    task._flow = self;
+
     while (self.maxParallel > 0 && self.unfinishedCount >= self.maxParallel) {
         // too many fibers running.  Yield until the fiber count goes down.
         yieldFiber(self);
@@ -59,15 +110,24 @@ var addTask = function(self, task){
 };
 
 var parseAddArgs = function(key, responseFormat){
+    var timeout;
+
     //Support single argument of responseFormat
     if(key instanceof Array){
         responseFormat = key;
         key = null;
+    } else if(Object.prototype.toString.call(key) === '[object Object]') {
+        //Support single argument object property bag
+        var obj = key;
+        key = obj.key;
+        responseFormat = obj.responseFormat;
+        timeout = obj.timeout;
     }
 
     return {
         key: key,
-        responseFormat: responseFormat
+        responseFormat: responseFormat,
+        timeout: timeout
     };
 };
 
@@ -120,13 +180,14 @@ var errorHandler = function(self, task){
             self._errorCallbackCalled = true;
             var err;
 
-            if(typeof task.result[0] === 'string'){
+            if(!(task.result[0] instanceof Error)){
+                err = new Error(task.result[0]);
+            } else {
                 err = task.result[0];
-            } else if(task.result[0] instanceof Error) {
-                //Append the stack
-                err = task.result[0];
-                err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
             }
+
+            //Append the stack
+            err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
 
             //If the errorCallback property was set, report the error
             if(self.errorCallback){

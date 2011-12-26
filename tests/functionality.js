@@ -553,6 +553,26 @@ suite.addBatch({
 
             assert.deepEqual(result.delayed2, { delayed2: 'delayed'});
         }
+    },
+
+    'When adding a task with the object syntax': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                immedMultiple(flow.add({ key: 'key', responseFormat: ['one', 'two', 'three']}));
+
+                self.callback(null, flow.wait());
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.deepEqual(result.key, {
+                one: 1,
+                two: 2,
+                three: 3
+            });
+        }
     }
 });
 

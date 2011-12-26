@@ -37,7 +37,7 @@ suite.addBatch({
         },
 
         'Error is trapped': function(err, result){
-            assert.equal(err, 'asyncTickError');
+            assert.equal(err.message, 'asyncTickError');
         }
     }
 });
@@ -58,7 +58,7 @@ suite.addBatch({
         },
 
         'Error is trapped': function(err, result){
-            assert.equal(err, 'asyncError');
+            assert.equal(err.message, 'asyncError');
         }
     }
 });
@@ -141,5 +141,42 @@ suite.addBatch({
         }
     }
 });
+
+suite.addBatch({
+    "When calling a task's callback more than once": {
+        topic: function(){
+            var self = this;
+
+            var doubleCallback = function(callback){
+                process.nextTick(function(){
+                    try {
+                        callback();
+                    } catch(e){
+                        self.callback();
+                    }
+                });
+
+                process.nextTick(function(){
+                    try {
+                        callback();
+                    } catch(e){
+                        self.callback();
+                    }
+                });
+            };
+
+            asyncblock(function(flow){
+                doubleCallback(flow.add());
+                flow.wait();
+            });
+        },
+
+        'Error is thrown': function(err, result){
+
+        }
+    }
+});
+
+
 
 suite.export(module);
