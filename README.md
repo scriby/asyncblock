@@ -84,13 +84,25 @@ asyncblock(function(flow) {
     fs.readFile(path2, 'utf8', flow.add('secondFile')); //Store the result of the second read under the key "secondFile"
     var files = flow.wait(); //Both file reads are running in parallel. Wait for them to finish.
     
+    
     fs.writeFile(path3, 'utf8', files.firstFile + files.secondFile);
     flow.wait(); //Wait for the combined contents to be written to a third file
     
+    
     fs.readFile(path4, 'utf8', flow.add()); //If no key is passed...
     var contents = flow.wait(); //That object will get returned by the flow.wait call
-    
     console.log(contents);
+
+    
+    fs.readFile(path5, 'utf8', flow.add('contents1'));
+    fs.readFile(path6, 'utf8', flow.add('contents2'));
+    console.log(flow.wait('contents2'); //Passing a key to flow.wait will wait on just that task
+    var contents1 = flow.wait('contents1'); //Wait on the result of contents2 first, then contents1
+    
+    fs.readFile(path7, 'utf8', flow.add('firstFile'));
+    fs.readFile(path8, 'utf8', flow.add('secondFile'));
+
+    fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Equivalent to first example, but more concise
 });
 ```
 
@@ -126,6 +138,44 @@ on whether flow.errorCallback was set. See the error handling section for more i
 
 When getting results from the flow.wait call, all but the first argument (the error) will be provided. 
 If more than one parameter was passed to the callback, it will be returned as an array (see formatting section for more details).
+
+## Passing a key to flow.wait
+
+New in 0.8.0, you can pass a key to flow.wait to wait on a specific operation. This gives you even more flexibility to
+create intricate control flows easily. Here's an example of starting to read 4 files, then taking an action when 2 of 
+them are finished:
+
+```javascript
+asyncblock(function(flow){
+   fs.readFile(path1, 'utf8', flow.add(1));                                           
+   fs.readFile(path2, 'utf8', flow.add(2));
+   fs.readFile(path3, 'utf8', flow.add(3));
+   fs.readFile(path4, 'utf8', flow.add(4));
+       
+   console.log(flow.wait(1) + flow.wait(2)); //The fiber will yield here until 1 & 2 are finished
+       
+   console.log(flow.wait(4)); //THe fiber will yield here until 4 is done
+       
+   if(flow.wait(3) === 'asdf') { //The fiber will yield here until 3 is done
+       console.log("3's contents are equal to asdf");                                               
+   }
+});
+```
+
+Once you get the result for a key, it will no longer be retrievable. If you request the same key twice, asyncblock will
+wait for another task with that key to be run.
+
+Something like this is also perfectly valid:
+
+```javascript
+asyncblock(function(flow){
+    process.nextTick(function(){
+        fs.readFile(path, 'utf8', flow.add('file')); //Add the "file" task here, asynchronously in a different "call stack"
+    });
+    
+    var fileContents = flow.wait('file'); //Wait here until a task named "file" is added and finished at some point in the future
+});
+```
 
 ## Keeping the stack trace
 
