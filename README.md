@@ -421,7 +421,7 @@ uploads executing, until fewer than 10 tasks remain. The final tasks are waited 
 
 ## Task timeouts
 
-You may specify the amount of time you want to wait for any single task in an asyncblock by setting flow.taskTimeout to
+New in 0.9.0, you may specify the amount of time you want to wait for any single task in an asyncblock by setting flow.taskTimeout to
 the desired number of milliseconds. If a task takes longer than the taskTimeout, an error will be raised in a similar way
 as if the async task itself had returned an error.
 
@@ -467,6 +467,33 @@ asyncblock(function(flow){
     //Code here will run
 });
 ```
+
+A better way to not treat timeouts as errors (new in 0.9.2):
+
+```javascript
+asyncblock(function(flow){
+    setTimeout(flow.add({timeout: 1000, timeoutIsError: false}, 2000);
+    flow.wait(); //The fiber will yield here for 1 second, then continue
+    
+    //Code here will run
+});
+```
+
+Or,
+
+```javascript
+asyncblock(function(flow){
+    flow.timeoutIsError = false;
+    
+    setTimeout(flow.add({timeout: 1000}, 2000);
+    flow.wait(); //The fiber will yield here for 1 second, then continue
+    
+    //Code here will run
+});
+```
+
+Even if timeoutIsError is set to false, the taskTimeout event will still be emitted. Also, flow.wait will return undefined
+for the tasks that timed out.
 
 ## Adding tasks asynchronously
 
