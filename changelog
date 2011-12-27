@@ -1,3 +1,7 @@
+0.9.3
+
+* When throwing a caught error from the fiber, throw it in a nextTick so it has some affect.
+
 0.9.2
 
 * Allow timeouts to not throw errors by passing timeoutIsError: false to add or queue, or set flow.timeoutIsError = false

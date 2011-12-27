@@ -394,7 +394,9 @@ module.exports = function(fn) {
                     flow.errorCallback(e);
                 }
             } else {
-                throw e;
+                process.nextTick(function(){
+                    throw e; //If the error is thrown outside of the nextTick, it doesn't seem to have any effect
+                });
             }
         } finally {
             //Prevent memory leak
