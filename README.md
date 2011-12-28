@@ -835,5 +835,6 @@ asyncblock(function(flow){
     console.log(flow.wait('data')); //Print the 3rd file's data
     console.log('all done');
 });
+```
 
 ### No prototypes were harmed in the making of this module
