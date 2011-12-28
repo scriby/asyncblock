@@ -7,8 +7,6 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
                 /____/                                                      
 
 ```
-
-
 ==================================================================
 
 A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support and some other goodies.
@@ -837,3 +835,5 @@ asyncblock(function(flow){
     console.log(flow.wait('data')); //Print the 3rd file's data
     console.log('all done');
 });
+
+### No prototypes were harmed in the making of this module
