@@ -828,15 +828,12 @@ var asyncblock = require('asyncblock');
 asyncblock(function(flow){
     fs.readFile('path1', 'utf8', flow.add('first'));
     fs.readFile('path2', 'utf8', flow.add('second'));
-
-    var fileContents = flow.wait();
     
-    fs.writeFile('path3', fileContents.first, flow.add());
-    flow.wait();
+    fs.writeFile('path3', flow.wait('first'), flow.add()); //Wait until done reading the first file, then write it to another file
+    flow.wait(); //Wait on all outstanding tasks
 
-    fs.readFile('path3', 'utf8', flow.add());
-    var data = flow.wait();
+    fs.readFile('path3', 'utf8', flow.add('data'));
 
-    console.log(data);
+    console.log(flow.wait('data')); //Print the 3rd file's data
     console.log('all done');
 });
