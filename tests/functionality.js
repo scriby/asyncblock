@@ -31,6 +31,14 @@ var delayed = function(callback){
     );
 };
 
+var echo = function(message, callback){
+    process.nextTick(
+        function(){
+            callback(null, message);
+        }
+    );
+};
+
 // sleeps for the specified amount of time and then calls the
 // callback with the number of milliseconds since Jan 1, 1970
 var sleepTest = function(sleepTime, callback) {
@@ -592,6 +600,36 @@ suite.addBatch({
                 two: 2,
                 three: 3
             });
+        }
+    },
+
+    'When running tasks with sync': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                var first = flow.sync(immed);
+                var second = flow.sync(delayed);
+
+                delayed(flow.add('delayed'));
+                var third = flow.sync(immed);
+                var fourth = flow.sync(echo, 'fourth');
+
+                var fifth = flow.wait('delayed');
+
+                var sixth = flow.sync({}, echo, 'sixth');
+
+                self.callback(null, { first: first, second: second, third: third, fourth: fourth, fifth: fifth, sixth: sixth});
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'immed');
+            assert.equal(result.second, 'delayed');
+            assert.equal(result.third, 'immed');
+            assert.equal(result.fourth, 'fourth');
+            assert.equal(result.fifth, 'delayed');
+            assert.equal(result.sixth, 'sixth');
         }
     }
 });

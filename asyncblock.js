@@ -43,6 +43,8 @@ var callbackHandler = function(self, task){
     var callbackCalled = false;
 
     task.callback = function(){
+        var args = Array.prototype.slice.call(arguments);
+
         if(callbackCalled){
             if(task.timedOut) {
                 return; //If the task timed out, it's likely the callback will be called twice. Once by the timeout code, and once by the task when it eventually finishes
@@ -57,8 +59,6 @@ var callbackHandler = function(self, task){
             clearTimeout(task.timeoutId);
         }
 
-        var args = Array.prototype.slice.call(arguments);
-
         self._parallelFinished++;
 
         if(self._parallelCount === 1 && task.key == null){
@@ -67,7 +67,7 @@ var callbackHandler = function(self, task){
 
         task.result = args;
 
-        if (self._light) {
+        if (self._light === true) {
             if(task.key != null){
                 self._returnValue[task.key] = resultHandler(self, task);
             }
@@ -335,6 +335,37 @@ var wait = function(self) {
     self._returnValue = {};
 
     return toReturn;
+};
+
+var parseSyncArgs = function(args){
+    var applyBegin, toExecute, options;
+
+    if(typeof args[0] === 'function'){
+        toExecute = args[0];
+        applyBegin = 1;
+    } else if(typeof args[1] === 'function'){
+        options = args[0];
+        toExecute = args[1];
+        applyBegin = 2;
+    }
+
+    return {
+        toExecute: toExecute,
+        options: options,
+        toApply: Array.prototype.slice.call(args, applyBegin)
+    };
+};
+
+Flow.prototype.sync = function(options, toExecute/*, apply*/){
+    var task = parseSyncArgs(arguments);
+    task.key = Math.random();
+
+    var callback = this.add(task);
+    task.toApply.push(callback);
+
+    task.toExecute.apply(task.self, task.toApply);
+
+    return this.wait(task.key);
 };
 
 var waitForKey = function(self, key){
