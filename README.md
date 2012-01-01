@@ -137,7 +137,8 @@ If an error occured in one of the async calls, code execution will stop at that 
 on whether flow.errorCallback was set. See the error handling section for more information.
 
 When getting results from the flow.wait call, all but the first argument (the error) will be provided. 
-If more than one parameter was passed to the callback, it will be returned as an array (see formatting section for more details).
+If more than one parameter was passed to the callback, only the second (first is error) will be returned. Pass a 
+responseFormat to flow.add to get the other results.
 
 ## Passing a key to flow.wait
 
@@ -352,7 +353,7 @@ Note that asyncblock will call the errorCallback only on the first error.
 
 ## Formatting results
 
-When more than one parameter is passed from an asynchronous function's callback, it is converted to an array:
+When more than one parameter is passed from an asynchronous function's callback, only the first is returned:
 
 ```javascript
     var asyncTask = function(callback) {
@@ -365,7 +366,7 @@ When more than one parameter is passed from an asynchronous function's callback,
         asyncTask(flow.add());
         
         var result = flow.wait();
-        console.log(result); // Prints [1, 2, 3]
+        console.log(result); // Prints 1
     });
 ```
 
