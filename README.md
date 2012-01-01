@@ -693,7 +693,11 @@ What if you don't care if an error occurs in a particular step? New in 0.7.5, yo
 ```javascript
 asyncblock(function(flow){
     fs.writeFile('path', 'utf8', contents, flow.addIgnoreError());                                        
-    flow.wait();
+    var result = flow.wait();
+    
+    if(result instanceof Error){
+        //If an error occured, it will be returned as the result                                             
+    }
     
     //This code will continue to run even if writeFile encountered an error
 });
@@ -704,11 +708,17 @@ asyncblock(function(flow){
     flow.queueIgnoreError(function(callback){
         fs.writeFile('path', 'utf8', contents, callback);                                        
     });
-    flow.wait();
+    var result = flow.wait();
+    
+    if(result instanceof Error){
+        //If an error occured, it will be returned as the result                                             
+    }
     
     //This code will continue to run even if writeFile encountered an error
 });
 ```
+
+You can check if an error occured by checking if the task returns an error object.
 
 Just as flow.callback is an alias for flow.add, flow.callbackIgnoreError is an alias for flow.addIgnoreError.
 
