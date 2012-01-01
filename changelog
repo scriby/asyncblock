@@ -1,3 +1,8 @@
+1.1.0
+
+* BREAKING CHANGE - If the callback to an async task passes more than one parameter, only the first will be kept (instead of converting to an array).
+  Pass a responseFormat to add to get the other arguments.
+
 1.0.0
 
 * flow.sync added as a shorthand for executing a single task in series

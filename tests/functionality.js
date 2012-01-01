@@ -131,7 +131,7 @@ suite.addBatch({
         },
 
         'Returns the right result': function(result){
-            assert.deepEqual(result, [1, 2, 3]);
+            assert.deepEqual(result, 1);
         }
     },
 

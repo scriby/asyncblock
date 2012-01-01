@@ -258,11 +258,7 @@ var resultHandler = function(self, task){
     if(task.responseFormat instanceof Array) {
         return convertResult(task.result, task.responseFormat);
     } else {
-        if(task.result.length > 2){
-            return task.result.slice(1);
-        } else {
-            return task.result[1];
-        }
+        return task.result[1];
     }
 };
 
