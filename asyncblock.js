@@ -168,13 +168,12 @@ var runTaskQueue = function(self){
 
 // Yields the current fiber and adds the result to the resultValue object
 var yieldFiber = function(self) {
-    runTaskQueue(self);
-
     self._light = false;
     var task = Fiber.yield();
 
     if(task != null) {
         var val = resultHandler(self, task);
+
         if(task.key != null){
             self._returnValue[task.key] = val;
         }
@@ -182,35 +181,41 @@ var yieldFiber = function(self) {
 };
 
 var errorHandler = function(self, task){
-    if(task.ignoreError){
-        return;
-    }
-
     if(task.result && task.result[0]){
         //Make sure we don't call the error callback more than once
-        if(!self._errorCallbackCalled){
-            self._errorCallbackCalled = true;
-            var err;
+        var err;
 
-            if(!(task.result[0] instanceof Error)){
-                err = new Error(task.result[0]);
-            } else {
-                err = task.result[0];
+        if(!(task.result[0] instanceof Error)){
+            err = new Error(task.result[0]);
+        } else {
+            err = task.result[0];
+        }
+
+        //Append the stack
+        err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
+
+        if(task.ignoreError){
+            //If ignoring the error, return it so it may be dealt with
+            if(task.key == null){
+                task.key = '_!_error_!_';
             }
 
-            //Append the stack
-            err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
+            return err;
+        } else {
+            if(!self._errorCallbackCalled){
+                self._errorCallbackCalled = true;
 
-            //If the errorCallback property was set, report the error
-            if(self.errorCallback){
-                self.errorCallback(err);
+                //If the errorCallback property was set, report the error
+                if(self.errorCallback){
+                    self.errorCallback(err);
 
-                fn = null;
-                fiber = null;
+                    fn = null;
+                    fiber = null;
+                }
+
+                //Prevent the rest of the code in the fiber from running
+                throw err;
             }
-
-            //Prevent the rest of the code in the fiber from running
-            throw err;
         }
     }
 };
@@ -220,7 +225,12 @@ var resultHandler = function(self, task){
         return null;
     }
 
-    errorHandler(self, task);
+    //If the task is ignoring errors, we return the error
+    var error = errorHandler(self, task);
+
+    if(error != null){
+        return error;
+    }
 
     if(task.responseFormat instanceof Array) {
         return convertResult(task.result, task.responseFormat);
@@ -314,8 +324,14 @@ Flow.prototype.queueIgnoreError = function(key, responseFormat, toExecute){
 };
 
 var wait = function(self) {
+    //The task queue needs to be drained before checking if we should yield, in the case that all the tasks in the queue finish without going async
+    runTaskQueue(self);
+
     while(shouldYield(self)){
         yieldFiber(self);
+
+        //The task queue needs to be drained again incase something else was added after the yield
+        runTaskQueue(self);
     }
 
     var toReturn;
@@ -327,6 +343,10 @@ var wait = function(self) {
         delete self._returnValue.__defaultkey__;
 
         toReturn = self._returnValue;
+    }
+
+    if(toReturn != null && toReturn['_!_error_!_'] != null){
+        toReturn = toReturn['_!_error_!_'];
     }
 
     //Prepare for the next run

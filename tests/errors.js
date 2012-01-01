@@ -122,22 +122,28 @@ suite.addBatch({
 
                 asyncTickError(flow.addIgnoreError());
                 asyncError(flow.callbackIgnoreError());
-                flow.wait();
+                var first = flow.wait();
 
                 flow.queueIgnoreError(function(callback){
                     asyncTickError(callback);
                 });
+                var second = flow.wait();
+
                 flow.queueIgnoreError(function(callback){
                     asyncError(callback);
                 });
-                flow.wait();
+                var third = flow.wait();
 
-                self.callback();
+                self.callback(null, { first: first, second: second, third: third });
             });
         },
 
         'Error is ignored': function(err, result){
             assert.isNull(err);
+
+            assert.instanceOf(result.first, Error);
+            assert.instanceOf(result.second, Error);
+            assert.instanceOf(result.third, Error);
         }
     }
 });
