@@ -724,17 +724,23 @@ Just as flow.callback is an alias for flow.add, flow.callbackIgnoreError is an a
 
 ## flow.sync
 
-A new shorthand was added in 1.0.0 to make waiting on single tasks even more concise.
+A new shorthand was added in 1.0.0 to make waiting on single tasks even more concise. The result of the async task
+is returned directly from the call to flow.sync. flow.sync also accepts similar parameters to flow.add and flow.queue.
+See the API page in the wiki for more details.
 
 ```javascript
 var sleep = function(time, callback){
-    setTimeout(callback, time);
+    setTimeout(function(){
+        callback(null, 'I was told to sleep for ' + time + ' ms');
+    }, time);
 };
 
 asyncblock(function(flow){
     console.time('time');
-    flow.sync(sleep, 1000); 
+    var result = flow.sync(sleep, 1000); 
     console.timeEnd('time'); //1 second
+    
+    console.log(result); //I was told to sleep for 1000 ms
 });
 
 ```
