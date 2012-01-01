@@ -722,6 +722,23 @@ You can check if an error occured by checking if the task returns an error objec
 
 Just as flow.callback is an alias for flow.add, flow.callbackIgnoreError is an alias for flow.addIgnoreError.
 
+## flow.sync
+
+A new shorthand was added in 1.0.0 to make waiting on single tasks even more concise.
+
+```javascript
+var sleep = function(time, callback){
+    setTimeout(callback, time);
+};
+
+asyncblock(function(flow){
+    console.time('time');
+    flow.sync(sleep, 1000); 
+    console.timeEnd('time'); //1 second
+});
+
+```
+
 ## Concurrency
 
 Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
