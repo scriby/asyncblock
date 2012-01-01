@@ -1,3 +1,11 @@
+1.0.0
+
+* flow.sync added as a shorthand for executing a single task in series
+* When ignoring errors, return an Error object if an error occurred during the task
+* Fixed a bug with flow.queue when queueing only tasks that finish immediately before calling wait
+* Added asyncblock.fullstack to provide more stack trace information (15x slower than plain asyncblock)
+* Improved stack traces. You can now see the line where the original error occurred from, even if it originated from an async callback, and some other improvements.
+
 0.9.3
 
 * When throwing a caught error from the fiber, throw it in a nextTick so it has some effect.
