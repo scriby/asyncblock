@@ -20,6 +20,8 @@ var Flow = function(fiber) {
     this.taskTimeout = null;
     this.timeoutIsError = null;
 
+    this._originalStack = null;
+
     // max number of parallel tasks. maxParallel <= 0 means no limit
     this.maxParallel = 0;
 };
@@ -42,7 +44,7 @@ var callbackHandler = function(self, task){
 
     var callbackCalled = false;
 
-    task.callback = function(){
+    task.callback = function taskCallback(){
         var args = Array.prototype.slice.call(arguments);
 
         if(callbackCalled){
@@ -66,14 +68,21 @@ var callbackHandler = function(self, task){
         }
 
         task.result = args;
+        var val = resultHandler(self, task);
 
-        if (self._light === true) {
-            if(task.key != null){
-                self._returnValue[task.key] = resultHandler(self, task);
-            }
-        } else {
+        if(task.key != null){
+            self._returnValue[task.key] = val;
+        }
+
+        if(self._light === false) {
+            task.resultWasAsync = true;
+
             self._light = true;
             self._fiber.run(task);
+        } else {
+            task.resultWasAsync = false;
+
+            errorHandler(self, task);
         }
     };
 
@@ -171,28 +180,55 @@ var yieldFiber = function(self) {
     self._light = false;
     var task = Fiber.yield();
 
-    if(task != null) {
-        var val = resultHandler(self, task);
+    errorHandler(self, task);
+};
 
-        if(task.key != null){
-            self._returnValue[task.key] = val;
+var errorHandler = function(self, task){
+    if(task != null && task.result && task.result[0]){
+         if(!task.ignoreError) {
+            if(!self._errorCallbackCalled){
+                self._errorCallbackCalled = true;
+
+                if(task.resultWasAsync) {
+                    var err = new Error();
+                    Error.captureStackTrace(err, self.wait);
+
+                    //Append the stack from the fiber, which indicates which wait call failed
+                    task.error.stack += '\n=== Pre-async stack ===\n' + err.stack;
+                }
+
+                if(self._originalStack != null){
+                    task.error.stack += '\n=== Pre-asyncblock stack ===\n' + self._originalStack;
+                }
+
+                //If the errorCallback property was set, report the error
+                if(self.errorCallback){
+                    self.errorCallback(task.error);
+                }
+
+                fn = null;
+                fiber = null;
+
+                //Prevent the rest of the code in the fiber from running
+                throw task.error;
+            }
         }
     }
 };
 
-var errorHandler = function(self, task){
+var errorParser = function(self, task) {
     if(task.result && task.result[0]){
         //Make sure we don't call the error callback more than once
         var err;
 
         if(!(task.result[0] instanceof Error)){
             err = new Error(task.result[0]);
+            Error.captureStackTrace(err, task.callback);
         } else {
             err = task.result[0];
         }
 
-        //Append the stack
-        err.stack += '\n=== Pre-async stack ===\n' + (new Error()).stack;
+        task.error = err;
 
         if(task.ignoreError){
             //If ignoring the error, return it so it may be dealt with
@@ -201,22 +237,9 @@ var errorHandler = function(self, task){
             }
 
             return err;
-        } else {
-            if(!self._errorCallbackCalled){
-                self._errorCallbackCalled = true;
-
-                //If the errorCallback property was set, report the error
-                if(self.errorCallback){
-                    self.errorCallback(err);
-
-                    fn = null;
-                    fiber = null;
-                }
-
-                //Prevent the rest of the code in the fiber from running
-                throw err;
-            }
         }
+
+        return err;
     }
 };
 
@@ -226,7 +249,7 @@ var resultHandler = function(self, task){
     }
 
     //If the task is ignoring errors, we return the error
-    var error = errorHandler(self, task);
+    var error = errorParser(self, task);
 
     if(error != null){
         return error;
@@ -431,9 +454,15 @@ Flow.prototype.doneAdding = function(){
     }
 };
 
-module.exports = function(fn) {
+var asyncblock = function(fn, options) {
+    var originalStack;
+    if(options != null && options.stack != null){
+        originalStack = options.stack;
+    }
+
     var fiber = Fiber(function() {
         var flow = new Flow(fiber);
+        flow._originalStack = originalStack;
 
         try {
             fn(flow);
@@ -457,4 +486,15 @@ module.exports = function(fn) {
     });
 
     fiber.run();
+};
+
+module.exports = function(fn){
+    asyncblock(fn);
+};
+
+module.exports.fullstack = function(fn){
+    var err = new Error();
+    Error.captureStackTrace(err, this.fullstack);
+
+    asyncblock(fn, { stack: err.stack });
 };
