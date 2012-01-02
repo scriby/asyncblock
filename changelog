@@ -1,3 +1,8 @@
+1.2.2
+
+* Slight behavior modification of asyncblock.wrap. It now attempts to wrap all functions to make sure no real async functions are missed.
+  It's up to the user to not try to call non-async functions with the wrapper.
+
 1.2.1
 
 * Adding caching for asyncblock.wrap calls

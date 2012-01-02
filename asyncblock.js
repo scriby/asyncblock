@@ -519,6 +519,7 @@ Future.prototype.__defineGetter__("result", function(){
 module.exports.wrap = function(obj){
     if(!obj.__asyncblock_wrapper){
         //Add a non-enumerable cache property as creating the wrapper takes some time
+        //The wrapper is cached here so it can be garbage collected when the original object drops out of scope
         Object.defineProperty(obj, '__asyncblock_wrapper', {
             get: function(){
                 return wrapper;
@@ -537,65 +538,48 @@ module.exports.wrap = function(obj){
             var func = obj[key];
 
             if(typeof func === 'function'){
-                var isAsync = true;
+                wrapper.future[key] = function(){
+                    var args = Array.prototype.slice.call(arguments);
 
-                //Make some guesses as to whether the function is async or not
-                if(func.length === 0 || key.slice(-4).toLowerCase() === 'sync'){
-                    isAsync = false;
-                }
+                    var fiber = Fiber.current;
+                    var flow = fiber._asyncblock_flow;
 
-                if(isAsync){
-                    var async = function(){
+                    if(flow == null){
+                        fiber = null;
 
-                    };
+                        throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
+                    }
 
-                    wrapper.future[key] = function(){
-                        var args = Array.prototype.slice.call(arguments);
+                    var key = Math.random();
+                    var callback;
+                    if(wrapper._options != null){
+                        wrapper._options.key = key;
 
-                        var fiber = Fiber.current;
-                        var flow = fiber._asyncblock_flow;
+                        callback = flow.add(wrapper._options);
+                        wrapper._options = null;
+                    } else {
+                        callback = flow.add(key);
+                    }
 
-                        if(flow == null){
-                            fiber = null;
+                    args.push(function(){
+                        fiber = null;
+                        flow = null;
 
-                            throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
-                        }
+                        callback.apply(null, arguments);
+                    });
 
-                        var key = Math.random();
-                        var callback;
-                        if(wrapper._options != null){
-                            wrapper._options.key = key;
+                    func.apply(obj, args);
 
-                            callback = flow.add(wrapper._options);
-                            wrapper._options = null;
-                        } else {
-                            callback = flow.add(key);
-                        }
+                    var future = new Future(flow, key);
 
-                        args.push(function(){
-                            fiber = null;
-                            flow = null;
+                    return future;
+                };
 
-                            callback.apply(null, arguments);
-                        });
+                wrapper.sync[key] = function(){
+                    var future = wrapper.future[key].apply(null, arguments);
 
-                        func.apply(obj, args);
-
-                        var future = new Future(flow, key);
-
-                        return future;
-                    };
-
-                    wrapper.sync[key] = function(){
-                        var future = wrapper.future[key].apply(null, arguments);
-
-                        return future.result;
-                    };
-                } else {
-                    wrapper.sync[key] = function(){
-                        return func.apply(obj, arguments);
-                    };
-                }
+                    return future.result;
+                };
 
                 //Copy all functions to the wrapper so they're available
                 wrapper[key] = function(){
