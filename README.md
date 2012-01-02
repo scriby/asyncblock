@@ -107,7 +107,7 @@ asyncblock(function(flow) {
 ```
 
 ## API
-[API](wiki/API)
+View the [API](https://github.com/scriby/asyncblock/wiki/API) docs
 
 ### Error handling
 
