@@ -1,6 +1,6 @@
 1.2.0
 
-* Added flow.wrap, a simple way to get synchronous style access to a module's async functions.
+* Added asyncblock.wrap, a simple way to get synchronous style access to a module's async functions.
 
 1.1.0
 
