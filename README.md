@@ -103,6 +103,9 @@ asyncblock(function(flow) {
     fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Equivalent to first example, but more concise
     flow.wait(); //Wait for the combined contents to be written to a third file
 
+
+    var contents = flow.sync(fs.readFile, path10, 'utf8'); //flow.sync is a shorthand for a single task that should be waited on immediately
+    console.log(contents);
 });
 ```
 
