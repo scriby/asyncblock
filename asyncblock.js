@@ -458,7 +458,11 @@ var asyncblock = function(fn, options) {
 
     var fiber = Fiber(function() {
         var flow = new Flow(fiber);
-        flow._originalStack = originalStack;
+        if(originalStack != null){
+            flow._originalStack = originalStack;
+        }
+
+        fiber._asyncblock_flow = flow;
 
         try {
             fn(flow);
@@ -493,4 +497,115 @@ module.exports.fullstack = function(fn){
     Error.captureStackTrace(err, this.fullstack);
 
     asyncblock(fn, { stack: err.stack });
+};
+
+var Future = function(flow, key){
+    this._flow = flow;
+    this._key = key;
+
+    this._result = null;
+    this._resultObtained = false;
+};
+
+Future.prototype.__defineGetter__("result", function(){
+    if(this._resultObtained === false){
+        this._result = this._flow.wait(this._key);
+        this._resultObtained = true;
+    }
+
+    return this._result;
+});
+
+module.exports.wrap = function(obj){
+    var wrapper = { sync: {}, future: {} };
+
+    for(var key in obj){
+        (function(key){
+            var func = obj[key];
+
+            if(typeof func === 'function'){
+                var isAsync = true;
+
+                //Make some guesses as to whether the function is async or not
+                if(func.length === 0 || key.slice(-4).toLowerCase() === 'sync'){
+                    isAsync = false;
+                }
+
+                if(isAsync){
+                    var async = function(){
+
+                    };
+
+                    wrapper.future[key] = function(){
+                        var args = Array.prototype.slice.call(arguments);
+
+                        var fiber = Fiber.current;
+                        var flow = fiber._asyncblock_flow;
+
+                        if(flow == null){
+                            fiber = null;
+
+                            throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
+                        }
+
+                        var key = Math.random();
+                        var callback;
+                        if(wrapper._options != null){
+                            wrapper._options.key = key;
+
+                            callback = flow.add(wrapper._options);
+                            wrapper._options = null;
+                        } else {
+                            callback = flow.add(key);
+                        }
+
+                        args.push(function(){
+                            fiber = null;
+                            flow = null;
+
+                            callback.apply(null, arguments);
+                        });
+
+                        func.apply(obj, args);
+
+                        var future = new Future(flow, key);
+
+                        return future;
+                    };
+
+                    wrapper.sync[key] = function(){
+                        var future = wrapper.future[key].apply(null, arguments);
+
+                        return future.result;
+                    };
+                } else {
+                    wrapper.sync[key] = function(){
+                        return func.apply(obj, arguments);
+                    };
+                }
+
+                //Copy all functions to the wrapper so they're available
+                wrapper[key] = function(){
+                    return func.apply(obj, arguments);
+                };
+            } else {
+                //Copy non-functions so they're available also
+                wrapper[key] = obj[key];
+            }
+        })(key);
+    }
+
+    wrapper.syncOptions = function(opts){
+        wrapper._options = opts;
+
+        return wrapper.sync;
+    };
+
+    wrapper.futureOptions = function(opts){
+        wrapper._options = opts;
+
+        return wrapper.future;
+    };
+
+    return wrapper;
 };

@@ -1,3 +1,7 @@
+1.2.0
+
+* Added flow.wrap, a simple way to get synchronous style access to a module's async functions.
+
 1.1.0
 
 * BREAKING CHANGE - If the callback to an async task passes more than one parameter, only the first will be kept (instead of converting to an array).
