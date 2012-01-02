@@ -134,7 +134,7 @@ var asyncblock = require('asyncblock');
 var fs = asyncblock.wrap(require('fs'));
 
 asyncblock(function(flow){
-    var fileContents = fs.sync.readFile(path, 'utf8');//Prefase the function name with .sync, and leave off the callback
+    var fileContents = fs.sync.readFile(path, 'utf8');//Preface the function name with .sync, and leave off the callback
     console.log(fileContents);
     
     var future1 = fs.future.readFile(path1, 'utf8'); //Use futures to achieve parallel execution
