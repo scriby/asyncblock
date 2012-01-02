@@ -106,9 +106,6 @@ asyncblock(function(flow) {
 });
 ```
 
-## API
-View the [API](https://github.com/scriby/asyncblock/wiki/API) docs
-
 ### Error handling
 
 ```javascript
@@ -123,6 +120,9 @@ var asyncTask = function(callback) {
     });
 });
 ```
+
+## API
+View the [API](https://github.com/scriby/asyncblock/wiki/API) docs
 
 ## flow.add and flow.wait
 
