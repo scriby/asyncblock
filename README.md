@@ -106,6 +106,9 @@ asyncblock(function(flow) {
 });
 ```
 
+## API
+[API](wiki/API)
+
 ### Error handling
 
 ```javascript
