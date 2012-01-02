@@ -517,6 +517,19 @@ Future.prototype.__defineGetter__("result", function(){
 });
 
 module.exports.wrap = function(obj){
+    if(!obj.__asyncblock_wrapper){
+        //Add a non-enumerable cache property as creating the wrapper takes some time
+        Object.defineProperty(obj, '__asyncblock_wrapper', {
+            get: function(){
+                return wrapper;
+            },
+
+            enumerable: false //This is currently the default, but set it just incase
+        });
+    } else {
+        return obj.__asyncblock_wrapper;
+    }
+
     var wrapper = { sync: {}, future: {} };
 
     for(var key in obj){

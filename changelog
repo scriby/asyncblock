@@ -1,3 +1,7 @@
+1.2.1
+
+* Adding caching for asyncblock.wrap calls
+
 1.2.0
 
 * Added asyncblock.wrap, a simple way to get synchronous style access to a module's async functions.
