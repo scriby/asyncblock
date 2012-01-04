@@ -9,7 +9,7 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
 ```
 ==================================================================
 
-A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support and some other goodies.
+A fully fledged flow control library built on top of fibers.
 
 ###Installation
 
