@@ -91,6 +91,30 @@ suite.addBatch({
             assert.deepEqual(result.first, {a: 1, b: 2, c: 3});
             assert.equal(result.second, 1);
         }
+    },
+
+    'When calling a function that calls its callback immdiately': {
+        topic: function(){
+            var self = this;
+
+            var obj = {
+                test: function(callback){
+                    callback(null, 1, 2, 3);
+                }
+            };
+
+            var wrapped = asyncblock.wrap(obj);
+
+            asyncblock(function(flow){
+                wrapped.sync.test();
+
+                self.callback();
+            });
+        },
+
+        'The results are as expected': function(result){
+            //As long as no errors occur above, this test passed
+        }
     }
 });
 

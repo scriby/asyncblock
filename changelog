@@ -1,3 +1,7 @@
+1.2.2
+
+* Bugfix: If a call to sync or future on a wrapped object calls its callback immediately (before going async), an error occurred.
+
 1.2.1
 
 * Adding caching for asyncblock.wrap calls

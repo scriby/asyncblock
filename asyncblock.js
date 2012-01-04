@@ -573,10 +573,13 @@ module.exports.wrap = function(obj){
                         }
 
                         args.push(function(){
-                            fiber = null;
-                            flow = null;
-
                             callback.apply(null, arguments);
+
+                            //This is in a textTick to handle the case where an async function calls its callback immediately.
+                            process.nextTick(function(){
+                                fiber = null;
+                                flow = null;
+                            });
                         });
 
                         func.apply(obj, args);
