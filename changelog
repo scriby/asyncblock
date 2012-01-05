@@ -1,3 +1,7 @@
+1.2.3
+
+* Update fibers dependency to 0.6.4
+
 1.2.2
 
 * Bugfix: If a call to sync or future on a wrapped object calls its callback immediately (before going async), an error occurred.
