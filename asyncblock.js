@@ -2,6 +2,8 @@ require('fibers');
 var events = require('events');
 var util = require('util');
 
+var cachedFiber;
+
 var Flow = function(fiber) {
     this._parallelCount = 0;
     this._parallelFinished = 0;
@@ -451,12 +453,14 @@ Flow.prototype.doneAdding = function(){
 };
 
 var asyncblock = function(fn, options) {
+    var fiber = Fiber.current;
+
     var originalStack;
     if(options != null && options.stack != null){
         originalStack = options.stack;
     }
 
-    var fiber = Fiber(function() {
+    var fiberContents = function() {
         var flow = new Flow(fiber);
         if(originalStack != null){
             flow._originalStack = originalStack;
@@ -483,9 +487,15 @@ var asyncblock = function(fn, options) {
             fn = null;
             fiber = null;
         }
-    });
+    };
 
-    fiber.run();
+    if(fiber != null){
+        //If this code is already running in a fiber, we don't need to make a new one
+        fiberContents();
+    } else {
+        fiber = Fiber(fiberContents);
+        fiber.run();
+    }
 };
 
 module.exports = function(fn){
