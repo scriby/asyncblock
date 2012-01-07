@@ -466,6 +466,7 @@ var asyncblock = function(fn, options) {
             flow._originalStack = originalStack;
         }
 
+        var originalFlow = fiber._asyncblock_flow;
         fiber._asyncblock_flow = flow;
 
         try {
@@ -483,6 +484,8 @@ var asyncblock = function(fn, options) {
                 });
             }
         } finally {
+            fiber._asyncblock_flow = originalFlow;//Reset this value incase this is a nested fiber
+
             //Prevent memory leak
             fn = null;
             fiber = null;
@@ -547,68 +550,51 @@ module.exports.wrap = function(obj){
             var func = obj[key];
 
             if(typeof func === 'function'){
-                var isAsync = true;
+                wrapper.future[key] = function(){
+                    var args = Array.prototype.slice.call(arguments);
 
-                //Make some guesses as to whether the function is async or not
-                if(func.length === 0 || key.slice(-4).toLowerCase() === 'sync'){
-                    isAsync = false;
-                }
+                    var fiber = Fiber.current;
+                    var flow = fiber._asyncblock_flow;
 
-                if(isAsync){
-                    var async = function(){
+                    if(flow == null){
+                        fiber = null;
 
-                    };
+                        throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
+                    }
 
-                    wrapper.future[key] = function(){
-                        var args = Array.prototype.slice.call(arguments);
+                    var key = Math.random();
+                    var callback;
+                    if(wrapper._options != null){
+                        wrapper._options.key = key;
 
-                        var fiber = Fiber.current;
-                        var flow = fiber._asyncblock_flow;
+                        callback = flow.add(wrapper._options);
+                        wrapper._options = null;
+                    } else {
+                        callback = flow.add(key);
+                    }
 
-                        if(flow == null){
+                    args.push(function(){
+                        callback.apply(null, arguments);
+
+                        //This is in a textTick to handle the case where an async function calls its callback immediately.
+                        process.nextTick(function(){
                             fiber = null;
-
-                            throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
-                        }
-
-                        var key = Math.random();
-                        var callback;
-                        if(wrapper._options != null){
-                            wrapper._options.key = key;
-
-                            callback = flow.add(wrapper._options);
-                            wrapper._options = null;
-                        } else {
-                            callback = flow.add(key);
-                        }
-
-                        args.push(function(){
-                            callback.apply(null, arguments);
-
-                            //This is in a textTick to handle the case where an async function calls its callback immediately.
-                            process.nextTick(function(){
-                                fiber = null;
-                                flow = null;
-                            });
+                            flow = null;
                         });
+                    });
 
-                        func.apply(obj, args);
+                    func.apply(obj, args);
 
-                        var future = new Future(flow, key);
+                    var future = new Future(flow, key);
 
-                        return future;
-                    };
+                    return future;
+                };
 
-                    wrapper.sync[key] = function(){
-                        var future = wrapper.future[key].apply(null, arguments);
+                wrapper.sync[key] = function(){
+                    var future = wrapper.future[key].apply(null, arguments);
 
-                        return future.result;
-                    };
-                } else {
-                    wrapper.sync[key] = function(){
-                        return func.apply(obj, arguments);
-                    };
-                }
+                    return future.result;
+                };
 
                 //Copy all functions to the wrapper so they're available
                 wrapper[key] = function(){
