@@ -1,3 +1,7 @@
+1.4
+
+* New syntactic sugar: flow.func chained syntax.
+
 1.3.1
 
 * Bugfix: If an async method on a wrapped object is called after a nested asyncblock, the error handling context would get switched to the nested asyncblock

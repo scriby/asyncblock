@@ -452,6 +452,67 @@ Flow.prototype.doneAdding = function(){
     }
 };
 
+//Chained syntax
+var FuncChain = function(flow){
+    this._flow = flow;
+
+    this._toExecute = null;
+    this._args = [];
+    this._self = null;
+    this._options = {};
+};
+
+FuncChain.prototype.sync = function(){
+    var future = this.future();
+
+    return future.result;
+};
+
+FuncChain.prototype.future = function(){
+    var key = Math.random();
+    this._options.key = key;
+    if(this._options.self == null){
+        this._options.self = this._self;
+    }
+
+    var args = this._args;
+    args.push(this._flow.add(this._options));
+
+    //If func is specified as a string, lookup the actual function
+    if(typeof this._toExecute === 'string' && this._options.self != null){
+        this._toExecute = this._options.self[this._toExecute];
+    }
+
+    this._toExecute.apply(this._options.self, args);
+
+    return new Future(this._flow, key);
+};
+
+FuncChain.prototype.self = function(self){
+    this._self = self;
+
+    return this;
+};
+
+FuncChain.prototype.options = function(options){
+    this._options = options;
+
+    return this;
+};
+
+FuncChain.prototype.args = function(){
+    this._args = Array.prototype.slice.call(arguments);
+
+    return this;
+};
+
+Flow.prototype.func = function(toExecute){
+    var chain = new FuncChain(this);
+    chain._toExecute = toExecute;
+
+    return chain;
+};
+
 var asyncblock = function(fn, options) {
     var fiber = Fiber.current;
 

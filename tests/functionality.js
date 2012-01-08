@@ -697,6 +697,51 @@ suite.addBatch({
             assert.equal(result.innerFlow4b.b, 'innerFlow4');
             assert.equal(result.innerFlow6, 'innerFlow6');
         }
+    },
+
+    'When using flow.func': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            var obj = {
+                selfTest: function(callback){
+                    callback(null, this);
+                },
+
+                arrayTest: function(callback){
+                    callback(null, 1, 2, 3);
+                }
+            };
+
+            asyncblock(function(flow){
+                result.first = flow.func(echo).args('first').sync();
+                result.second = flow.func(echoImmed).args('second').sync();
+
+                var f1 = flow.func(echo).args('third').future();
+                var f2 = flow.func(echo).args('fourth').future();
+
+                result.third = f1.result;
+                result.fourth = f2.result;
+
+                result.fifth = flow.func(obj.selfTest).self(obj).sync() === obj;
+                result.sixth = flow.func('selfTest').self(obj).sync() === obj;
+
+                result.seventh = flow.func('arrayTest').self(obj).options({responseFormat: ['a', 'b', 'c']}).sync();
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'first');
+            assert.equal(result.second, 'second');
+            assert.equal(result.third, 'third');
+            assert.equal(result.fourth, 'fourth');
+            assert.isTrue(result.fifth);
+            assert.isTrue(result.sixth);
+            assert.deepEqual(result.seventh, {a: 1, b: 2, c: 3});
+        }
     }
 
 });
