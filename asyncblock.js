@@ -2,6 +2,8 @@ require('fibers');
 var events = require('events');
 var util = require('util');
 
+var cachedFiber;
+
 var Flow = function(fiber) {
     this._parallelCount = 0;
     this._parallelFinished = 0;
@@ -451,17 +453,20 @@ Flow.prototype.doneAdding = function(){
 };
 
 var asyncblock = function(fn, options) {
+    var fiber = Fiber.current;
+
     var originalStack;
     if(options != null && options.stack != null){
         originalStack = options.stack;
     }
 
-    var fiber = Fiber(function() {
+    var fiberContents = function() {
         var flow = new Flow(fiber);
         if(originalStack != null){
             flow._originalStack = originalStack;
         }
 
+        var originalFlow = fiber._asyncblock_flow;
         fiber._asyncblock_flow = flow;
 
         try {
@@ -479,13 +484,21 @@ var asyncblock = function(fn, options) {
                 });
             }
         } finally {
+            fiber._asyncblock_flow = originalFlow;//Reset this value incase this is a nested fiber
+
             //Prevent memory leak
             fn = null;
             fiber = null;
         }
-    });
+    };
 
-    fiber.run();
+    if(fiber != null){
+        //If this code is already running in a fiber, we don't need to make a new one
+        fiberContents();
+    } else {
+        fiber = Fiber(fiberContents);
+        fiber.run();
+    }
 };
 
 module.exports = function(fn){
@@ -519,7 +532,6 @@ Future.prototype.__defineGetter__("result", function(){
 module.exports.wrap = function(obj){
     if(!obj.__asyncblock_wrapper){
         //Add a non-enumerable cache property as creating the wrapper takes some time
-        //The wrapper is cached here so it can be garbage collected when the original object drops out of scope
         Object.defineProperty(obj, '__asyncblock_wrapper', {
             get: function(){
                 return wrapper;
@@ -562,10 +574,13 @@ module.exports.wrap = function(obj){
                     }
 
                     args.push(function(){
-                        fiber = null;
-                        flow = null;
-
                         callback.apply(null, arguments);
+
+                        //This is in a textTick to handle the case where an async function calls its callback immediately.
+                        process.nextTick(function(){
+                            fiber = null;
+                            flow = null;
+                        });
                     });
 
                     func.apply(obj, args);

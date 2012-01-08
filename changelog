@@ -1,7 +1,19 @@
+1.3.1
+
+* Bugfix: If an async method on a wrapped object is called after a nested asyncblock, the error handling context would get switched to the nested asyncblock
+* When wrapping, don't attempt to guess if the function is async or not. Rely on the caller to not attempt to call non-async style methods.
+
+1.3.0
+
+* Creating an asyncblock when currently running in a fiber reuses the fiber, giving a 30x performance boost when creating nested asyncblocks
+
+1.2.3
+
+* Update fibers dependency to 0.6.4
+
 1.2.2
 
-* Slight behavior modification of asyncblock.wrap. It now attempts to wrap all functions to make sure no real async functions are missed.
-  It's up to the user to not try to call non-async functions with the wrapper.
+* Bugfix: If a call to sync or future on a wrapped object calls its callback immediately (before going async), an error occurred.
 
 1.2.1
 

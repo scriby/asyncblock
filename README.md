@@ -9,7 +9,7 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
 ```
 ==================================================================
 
-A fork of [node-green-light](https://github.com/axkibe/node-green-light) with parallel execution support and some other goodies.
+A fully fledged flow control library built on top of fibers.
 
 ###Installation
 
@@ -103,6 +103,9 @@ asyncblock(function(flow) {
     fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Equivalent to first example, but more concise
     flow.wait(); //Wait for the combined contents to be written to a third file
 
+
+    var contents = flow.sync(fs.readFile, path10, 'utf8'); //flow.sync is a shorthand for a single task that should be waited on immediately
+    console.log(contents);
 });
 ```
 
@@ -120,6 +123,27 @@ var asyncTask = function(callback) {
     });
 });
 ```
+
+### Wrapping existing async modules
+
+You may wrap existing async modules to provide a syncronous wrapper which may be used within an asyncblock. This style
+may be used instead of or in addition to flow.add & flow.wait.
+
+```javascript
+var asyncblock = require('asyncblock');
+var fs = asyncblock.wrap(require('fs'));
+
+asyncblock(function(flow){
+    var fileContents = fs.sync.readFile(path, 'utf8');//Preface the function name with .sync, and leave off the callback
+    console.log(fileContents);
+    
+    var future1 = fs.future.readFile(path1, 'utf8'); //Use futures to achieve parallel execution
+    var future2 = fs.future.readFile(path2, 'utf8');
+    console.log(future1.result + future2.result); //When .result is called, execution yields (event loop not blocked)
+});
+```
+
+See the API docs for more information.
 
 ## API
 View the [API](https://github.com/scriby/asyncblock/wiki/API) docs

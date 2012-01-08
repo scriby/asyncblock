@@ -183,6 +183,54 @@ suite.addBatch({
     }
 });
 
+suite.addBatch({
+    'When an asyncblock is within an asyncblock': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                flow.errorCallback = function(err){
+                    self.callback(null, 'outer');
+                };
+
+                var outerCont = flow.add();
+
+                asyncblock(function(innerFlow){
+                    innerFlow.errorCallback = function(err){
+                        self.callback('This error handler should not be called');
+                    };
+
+                    var cont = innerFlow.add();
+                    process.nextTick(function(){
+                        cont();
+                    });
+
+                    innerFlow.wait();
+
+                    outerCont();
+                });
+
+                flow.wait();
+
+                var wrapped = asyncblock.wrap({
+                    async: function(callback){
+                        process.nextTick(function(){
+                            return callback('err');
+                        });
+                    }
+                });
+
+                wrapped.sync.async();
+            });
+        },
+
+        'The error is handled by the correct asyncblock': function(result){
+            assert.equal(result, 'outer');
+        }
+    }
+
+});
+
 
 
 suite.export(module);

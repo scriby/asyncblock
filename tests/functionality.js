@@ -39,6 +39,10 @@ var echo = function(message, callback){
     );
 };
 
+var echoImmed = function(message, callback){
+    callback(null, message);
+};
+
 // sleeps for the specified amount of time and then calls the
 // callback with the number of milliseconds since Jan 1, 1970
 var sleepTest = function(sleepTime, callback) {
@@ -631,7 +635,70 @@ suite.addBatch({
             assert.equal(result.fifth, 'delayed');
             assert.equal(result.sixth, 'sixth');
         }
+    },
+
+    'When running asyncblocks inside of asyncblocks': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            asyncblock(function(outerFlow){
+                echo('outer', outerFlow.add());
+
+                asyncblock(function(innerFlow1){
+                    echo('innerFlow1', innerFlow1.add());
+                    result.innerFlow1 = innerFlow1.wait();
+                });
+
+                asyncblock(function(innerFlow2){
+                    echo('innerFlow2', innerFlow2.add('innerFlow2'));
+                });
+
+                asyncblock(function(innerFlow3){
+                    echoImmed('innerFlow3', innerFlow3.add());
+                    result.innerFlow3 = innerFlow3.wait();
+                });
+
+                asyncblock(function(innerFlow4){
+                    echo('innerFlow4', innerFlow4.add('a'));
+                    result.innerFlow4a = innerFlow4.wait();
+
+                    echo('innerFlow4', innerFlow4.add('b'));
+                    result.innerFlow4b = innerFlow4.wait();
+                });
+
+                asyncblock(function(innerFlow5){
+                    process.nextTick(function(){
+                        echo('innerFlow5', innerFlow5.add());
+                    });
+                });
+
+                asyncblock(function(innerFlow6){
+                    process.nextTick(function(){
+                        echo('innerFlow6', innerFlow6.add());
+
+                        innerFlow6.doneAdding();
+                    });
+
+                    result.innerFlow6 = innerFlow6.forceWait();
+                });
+
+                result.outer = outerFlow.wait();
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.outer, 'outer');
+            assert.equal(result.innerFlow1, 'innerFlow1');
+            assert.equal(result.innerFlow3, 'innerFlow3');
+            assert.equal(result.innerFlow4a.a, 'innerFlow4');
+            assert.equal(result.innerFlow4b.b, 'innerFlow4');
+            assert.equal(result.innerFlow6, 'innerFlow6');
+        }
     }
+
 });
 
 
