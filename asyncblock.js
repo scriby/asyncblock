@@ -406,10 +406,12 @@ var wait = function(self) {
 };
 
 var waitForKey = function(self, key){
-    while(!self._finishedTasks.hasOwnProperty(key)) {
-        runTaskQueue(self); //Run queued tasks in case we're waiting on any of them
+    runTaskQueue(self); //Task queue must be run here first in case the task calls the callback immediately
 
+    while(!self._finishedTasks.hasOwnProperty(key)) {
         yieldFiber(self);
+
+        runTaskQueue(self); //Run queued tasks in case we're waiting on any of them
     }
 
     var task = self._finishedTasks[key];
@@ -499,6 +501,11 @@ FuncChain.prototype.queue = function(key){
     task.key = key;
     task.self = this._options.self = this._self;
     task.toApply = this._args;
+    task.timeout = this._options.timeout;
+    task.timeoutIsError = this._options.timeoutIsError;
+    task.responseFormat = this._options.responseFormat;
+    task.ignoreError = this._options.ignoreError;
+    task.dontWait = this._options.dontWait;
 
     //If func is specified as a string, lookup the actual function
     if(typeof this._toExecute === 'string' && this._options.self != null){

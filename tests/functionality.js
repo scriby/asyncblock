@@ -753,6 +753,9 @@ suite.addBatch({
 
                 result.tenth = f3.result; //Get this result after the flow.wait call to make sure it doesn't interfere with it
 
+                flow.func('arrayTest').self(obj).options({responseFormat: ['a', 'b', 'c']}).queue('eleventh');
+                result.eleventh = flow.wait('eleventh');
+
                 self.callback(null, result);
             });
         },
@@ -768,6 +771,7 @@ suite.addBatch({
             assert.equal(result.eighth, 'eighth');
             assert.equal(result.ninth, 'ninth');
             assert.equal(result.tenth, 'tenth');
+            assert.deepEqual(result.eleventh, {a: 1, b: 2, c: 3});
         }
     },
 
