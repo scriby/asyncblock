@@ -5,27 +5,26 @@ var util = require('util');
 var cachedFiber;
 
 var Flow = function(fiber) {
-    this._parallelCount = 0;
-    this._parallelFinished = 0;
+    this._parallelCount = 0; //The number of currently active tasks
+    this._parallelFinished = 0; //The number of finished tasks since the last call to wait
 
-    this._fiber = fiber;
+    this._fiber = fiber; //A reference to the fiber
 
-    this._taskQueue = [];
-    this._forceWait = false;
+    this._taskQueue = []; //A placeholder for queued tasks
+    this._forceWait = false; //Internal state that indicates that the fiber should yield until doneAdding is called
 
-    this._light = true;
-    this._returnValue = {};
+    this._light = true; //Determines whether the fiber is currently running or not. true = running
+    this._finishedTasks = {}; //Buffers information about finished tasks until results are requested
 
-    this._errorCallbackCalled = false;
-    this.errorCallback = null;
+    this._errorCallbackCalled = false; //Internal state keeping track of whether we've called the error callback or not. We don't want to call it twice.
+    this.errorCallback = null; //Call this function when an error occurs
 
-    this.taskTimeout = null;
-    this.timeoutIsError = null;
+    this.taskTimeout = null; //Number of milliseconds the task may run for. Null means no limit.
+    this.timeoutIsError = null; //If a timeout should be treated as an error, or if the task should simply be aborted and flow continue.
 
-    this._originalStack = null;
+    this._originalStack = null; //Used to store the stack at the time of asyncblock creation
 
-    // max number of parallel tasks. maxParallel <= 0 means no limit
-    this.maxParallel = 0;
+    this.maxParallel = 0; // max number of parallel tasks. maxParallel <= 0 means no limit
 };
 
 util.inherits(Flow, events.EventEmitter);
@@ -63,7 +62,9 @@ var callbackHandler = function(self, task){
             clearTimeout(task.timeoutId);
         }
 
-        self._parallelFinished++;
+        if(!task.dontWait) {
+            self._parallelFinished++;
+        }
 
         if(self._parallelCount === 1 && task.key == null){
             task.key = '__defaultkey__';
@@ -73,7 +74,11 @@ var callbackHandler = function(self, task){
         var val = resultHandler(self, task);
 
         if(task.key != null){
-            self._returnValue[task.key] = val;
+            task.formattedResult = val;
+        }
+
+        if(task.key != null){
+            self._finishedTasks[task.key] = task;
         }
 
         if(self._light === false) {
@@ -124,7 +129,9 @@ var addTask = function(self, task){
         yieldFiber(self);
     }
 
-    self._parallelCount++;
+    if(!task.dontWait){
+        self._parallelCount++;
+    }
 
     return callbackHandler(self, task);
 };
@@ -132,6 +139,8 @@ var addTask = function(self, task){
 var parseAddArgs = function(key, responseFormat){
     var timeout;
     var timeoutIsError;
+    var dontWait = false;
+    var ignoreError = false;
 
     //Support single argument of responseFormat
     if(key instanceof Array){
@@ -144,19 +153,22 @@ var parseAddArgs = function(key, responseFormat){
         responseFormat = obj.responseFormat;
         timeout = obj.timeout;
         timeoutIsError = obj.timeoutIsError;
+        dontWait = obj.dontWait;
+        ignoreError = obj.ignoreError;
     }
 
     return {
         key: key,
         responseFormat: responseFormat,
         timeout: timeout,
-        timeoutIsError: timeoutIsError
+        timeoutIsError: timeoutIsError,
+        dontWait: dontWait,
+        ignoreError: ignoreError
     };
 };
 
 Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
     var task = parseAddArgs(key, responseFormat);
-    task.ignoreError = false;
 
     return addTask(this, task);
 };
@@ -171,9 +183,14 @@ Flow.prototype.addIgnoreError = Flow.prototype.callbackIgnoreError = function(ke
 var runTaskQueue = function(self){
     //Check if there are any new queued tasks to add
     while(self._taskQueue.length > 0) {
-        var firstTask = self._taskQueue.splice(0, 1)[0];
+        var task = self._taskQueue.splice(0, 1)[0];
 
-        firstTask.toExecute(addTask(self, firstTask));
+        if(typeof task.toApply !== 'undefined') {
+            var toApply = task.toApply.concat(addTask(self, task));
+            task.toExecute.apply(task.self, toApply);
+        } else {
+            task.toExecute(addTask(self, task));
+        }
     }
 };
 
@@ -233,12 +250,10 @@ var errorParser = function(self, task) {
         task.error = err;
 
         if(task.ignoreError){
-            //If ignoring the error, return it so it may be dealt with
+            //If ignoring the error, make sure it has a key so the return value (the error) gets stored
             if(task.key == null){
                 task.key = '_!_error_!_';
             }
-
-            return err;
         }
 
         return err;
@@ -287,6 +302,7 @@ var shouldYield = function(self) {
 var parseQueueArgs = function(key, responseFormat, toExecute){
     var timeout;
     var timeoutIsError;
+    var ignoreError = false;
 
     //Support single argument of responseFormat
     if(key instanceof Array){
@@ -310,6 +326,7 @@ var parseQueueArgs = function(key, responseFormat, toExecute){
         //toExecute would be set from if block above
         timeout = obj.timeout;
         timeoutIsError = obj.timeoutIsError;
+        ignoreError = obj.ignoreError;
     }
 
     return {
@@ -317,7 +334,8 @@ var parseQueueArgs = function(key, responseFormat, toExecute){
         responseFormat: responseFormat,
         toExecute: toExecute,
         timeout: timeout,
-        timeoutIsError: timeoutIsError
+        timeoutIsError: timeoutIsError,
+        ignoreError: ignoreError
     };
 };
 
@@ -332,7 +350,6 @@ var queue = function(self, task){
 
 Flow.prototype.queue = function(key, responseFormat, toExecute) {
     var task = parseQueueArgs(key, responseFormat, toExecute);
-    task.ignoreError = false;
 
     queue(this, task);
 };
@@ -358,12 +375,23 @@ var wait = function(self) {
     var toReturn;
 
     //If add was called once and no parameter name was set, just return the value as is
-    if(self._parallelCount === 1 && '__defaultkey__' in self._returnValue) {
-        toReturn = self._returnValue.__defaultkey__;
-    } else {
-        delete self._returnValue.__defaultkey__;
+    if(self._parallelCount === 1 && '__defaultkey__' in self._finishedTasks) {
+        toReturn = self._finishedTasks.__defaultkey__.formattedResult;
 
-        toReturn = self._returnValue;
+        delete self._finishedTasks.__defaultkey__;
+    } else {
+        delete self._finishedTasks.__defaultkey__;
+
+        toReturn = {};
+
+        Object.keys(self._finishedTasks).forEach(function(key){
+            var task = self._finishedTasks[key];
+
+            if(!task.dontWait) {
+                toReturn[key] = task.formattedResult;
+                delete self._finishedTasks[key];
+            }
+        });
     }
 
     if(toReturn != null && toReturn['_!_error_!_'] != null){
@@ -373,9 +401,42 @@ var wait = function(self) {
     //Prepare for the next run
     self._parallelFinished = 0;
     self._parallelCount = 0;
-    self._returnValue = {};
 
     return toReturn;
+};
+
+var waitForKey = function(self, key){
+    while(!self._finishedTasks.hasOwnProperty(key)) {
+        runTaskQueue(self); //Run queued tasks in case we're waiting on any of them
+
+        yieldFiber(self);
+    }
+
+    var task = self._finishedTasks[key];
+
+    //Clean up
+    delete self._finishedTasks[key];
+
+    if(task && !task.dontWait) {
+        self._parallelCount--;
+        self._parallelFinished--;
+    }
+
+    return task.formattedResult;
+};
+
+Flow.prototype.wait = function(key) {
+    if(key != null){
+        return waitForKey(this, key);
+    } else {
+        return wait(this);
+    }
+};
+
+Flow.prototype.forceWait = function() {
+    this._forceWait = true;
+
+    return wait(this);
 };
 
 var parseSyncArgs = function(args){
@@ -409,35 +470,6 @@ Flow.prototype.sync = function(options, toExecute/*, apply*/){
     return this.wait(task.key);
 };
 
-var waitForKey = function(self, key){
-    while(!self._returnValue.hasOwnProperty(key)) {
-        yieldFiber(self);
-    }
-
-    var result = self._returnValue[key];
-
-    //Clean up
-    delete self._returnValue[key];
-    self._parallelCount--;
-    self._parallelFinished--;
-
-    return result;
-};
-
-Flow.prototype.wait = function(key) {
-    if(key != null){
-        return waitForKey(this, key);
-    } else {
-        return wait(this);
-    }
-};
-
-Flow.prototype.forceWait = function() {
-    this._forceWait = true;
-
-    return wait(this);
-};
-
 Flow.prototype.doneAdding = function(){
     if(!this._forceWait) {
         throw new Error('doneAdding should only be called in conjunction with forceWait');
@@ -462,6 +494,22 @@ var FuncChain = function(flow){
     this._options = {};
 };
 
+FuncChain.prototype.queue = function(key){
+    var task = {};
+    task.key = key;
+    task.self = this._options.self = this._self;
+    task.toApply = this._args;
+
+    //If func is specified as a string, lookup the actual function
+    if(typeof this._toExecute === 'string' && this._options.self != null){
+        this._toExecute = this._options.self[this._toExecute];
+    }
+
+    task.toExecute = this._toExecute;
+
+    queue(this._flow, task);
+};
+
 FuncChain.prototype.sync = function(){
     var future = this.future();
 
@@ -474,6 +522,7 @@ FuncChain.prototype.future = function(){
     if(this._options.self == null){
         this._options.self = this._self;
     }
+    this._options.dontWait = true;
 
     var args = this._args;
     args.push(this._flow.add(this._options));
@@ -625,14 +674,15 @@ module.exports.wrap = function(obj){
 
                     var key = Math.random();
                     var callback;
-                    if(wrapper._options != null){
-                        wrapper._options.key = key;
 
-                        callback = flow.add(wrapper._options);
-                        wrapper._options = null;
-                    } else {
-                        callback = flow.add(key);
-                    }
+
+                    var options = wrapper._options || {};
+
+                    options.key = key;
+                    options.dontWait = true;
+
+                    callback = flow.add(options);
+                    wrapper._options = null;
 
                     args.push(function(){
                         callback.apply(null, arguments);

@@ -66,6 +66,22 @@ var delayedAdd = function(flow, callback){
     );
 };
 
+var obj = {
+    selfTest: function(callback){
+        callback(null, this);
+    },
+
+    arrayTest: function(callback){
+        callback(null, 1, 2, 3);
+    },
+
+    echo: function(message, callback){
+        process.nextTick(function(){
+            callback(null, message);
+        });
+    }
+};
+
 suite.addBatch({
     'A single result, immediately': {
         topic: function(){
@@ -367,12 +383,12 @@ suite.addBatch({
         }
     },
 
-    'maxParallel property limits the number of active fibers': {
+    'maxParallel property limits the number of parallel tasks': {
         topic: function(){
             var self = this;
 
             asyncblock(function(flow){
-                flow.maxParallel = 2; // limit to 2 parallel fibers
+                flow.maxParallel = 2; // limit to 2 parallel tasks
 
                 sleepTest(350, flow.add('t350')); // adds first fiber and return immediately (fiber should sleep 350ms)
                 sleepTest(200, flow.add('t200')); // adds second fiber and return immediately (fiber should sleep 200ms)
@@ -384,7 +400,7 @@ suite.addBatch({
             });
         },
 
-        'Should limit fibers': function(result){
+        'Should limit tasks': function(result){
             // t200 < t100 < t350
             assert.greater(result.t100, result.t200);
             assert.greater(result.t350, result.t100);
@@ -475,7 +491,12 @@ suite.addBatch({
                 });
                 var third = flow.wait();
 
-                self.callback(null, { first: first, second: second, third: third });
+                flow.queue({ key: 'delayed4', timeout: 1000 }, function(callback){
+                    delayed(callback);
+                });
+                var fourth = flow.wait('delayed4');
+
+                self.callback(null, { first: first, second: second, third: third, fourth: fourth });
             });
         },
 
@@ -493,7 +514,9 @@ suite.addBatch({
 
             assert.deepEqual(result.third, {
                 delayed3: 'delayed'
-            })
+            });
+
+            assert.equal(result.fourth, 'delayed');
         }
     },
 
@@ -704,17 +727,9 @@ suite.addBatch({
             var self = this;
             var result = {};
 
-            var obj = {
-                selfTest: function(callback){
-                    callback(null, this);
-                },
-
-                arrayTest: function(callback){
-                    callback(null, 1, 2, 3);
-                }
-            };
-
             asyncblock(function(flow){
+                flow.func(echo).args('eighth').queue('eighth');
+
                 result.first = flow.func(echo).args('first').sync();
                 result.second = flow.func(echoImmed).args('second').sync();
 
@@ -729,6 +744,15 @@ suite.addBatch({
 
                 result.seventh = flow.func('arrayTest').self(obj).options({responseFormat: ['a', 'b', 'c']}).sync();
 
+                result.eighth = flow.wait('eighth');
+
+                var f3 = flow.func(echo).args('tenth').future();
+
+                flow.func(echo).args('ninth').queue();
+                result.ninth = flow.wait();
+
+                result.tenth = f3.result; //Get this result after the flow.wait call to make sure it doesn't interfere with it
+
                 self.callback(null, result);
             });
         },
@@ -741,6 +765,39 @@ suite.addBatch({
             assert.isTrue(result.fifth);
             assert.isTrue(result.sixth);
             assert.deepEqual(result.seventh, {a: 1, b: 2, c: 3});
+            assert.equal(result.eighth, 'eighth');
+            assert.equal(result.ninth, 'ninth');
+            assert.equal(result.tenth, 'tenth');
+        }
+    },
+
+    'Futures should not be waited on when calling flow.wait()' : {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            var wrapped = asyncblock.wrap(obj);
+
+            asyncblock(function(flow){
+                var future1 = flow.func(echo).args('first').future();
+                var future2 = wrapped.future.echo('second');
+
+                result.wait = flow.wait();
+
+                result.first = future1.result;
+                result.second = future2.result;
+
+                self.callback(null, result);
+            });
+        },
+
+        'Flow.wait is empty': function(result){
+            assert.deepEqual(result.wait, {});
+        },
+
+        'Futures have correct results': function(result){
+            assert.equal(result.first, 'first');
+            assert.equal(result.second, 'second');
         }
     }
 
