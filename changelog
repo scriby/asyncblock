@@ -1,3 +1,7 @@
+1.5
+
+* flow.func now returns a function that can be invoked at any time to get the result instead of calling .sync()
+
 1.4.5
 
 * flow.wait changed to not wait on futures
