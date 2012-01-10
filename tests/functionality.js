@@ -775,6 +775,40 @@ suite.addBatch({
         }
     },
 
+    'When using flow.func with function execution': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            asyncblock(function(flow){
+                result.first = flow.func(echo)('first');
+
+                result.second = flow.func(obj.selfTest).call(obj) === obj;
+                result.third = flow.func(obj.selfTest).apply(obj) === obj;
+
+                result.fourth = flow.func('selfTest').self(obj)() === obj;
+
+                result.fifth = flow.func(obj.arrayTest).options({responseFormat: ['a', 'b', 'c']})();
+
+                result.sixth = flow.func(echoImmed)('sixth');
+
+                result.seventh = flow.func(echoImmed).args('sixth')();
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'first');
+            assert.isTrue(result.second);
+            assert.isTrue(result.third);
+            assert.isTrue(result.fourth);
+            assert.deepEqual(result.fifth, { a: 1, b: 2, c: 3});
+            assert.equal(result.sixth, 'sixth');
+            assert.equal(result.seventh, 'seventh');
+        }
+    },
+
     'Futures should not be waited on when calling flow.wait()' : {
         topic: function(){
             var self = this;

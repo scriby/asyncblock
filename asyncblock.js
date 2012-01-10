@@ -491,82 +491,96 @@ var FuncChain = function(flow){
     this._flow = flow;
 
     this._toExecute = null;
-    this._args = [];
+    this._args = this._unsetArgs =  [];
     this._self = null;
     this._options = {};
-};
-
-FuncChain.prototype.queue = function(key){
-    var task = {};
-    task.key = key;
-    task.self = this._options.self = this._self;
-    task.toApply = this._args;
-    task.timeout = this._options.timeout;
-    task.timeoutIsError = this._options.timeoutIsError;
-    task.responseFormat = this._options.responseFormat;
-    task.ignoreError = this._options.ignoreError;
-    task.dontWait = this._options.dontWait;
-
-    //If func is specified as a string, lookup the actual function
-    if(typeof this._toExecute === 'string' && this._options.self != null){
-        this._toExecute = this._options.self[this._toExecute];
-    }
-
-    task.toExecute = this._toExecute;
-
-    queue(this._flow, task);
-};
-
-FuncChain.prototype.sync = function(){
-    var future = this.future();
-
-    return future.result;
-};
-
-FuncChain.prototype.future = function(){
-    var key = Math.random();
-    this._options.key = key;
-    if(this._options.self == null){
-        this._options.self = this._self;
-    }
-    this._options.dontWait = true;
-
-    var args = this._args;
-    args.push(this._flow.add(this._options));
-
-    //If func is specified as a string, lookup the actual function
-    if(typeof this._toExecute === 'string' && this._options.self != null){
-        this._toExecute = this._options.self[this._toExecute];
-    }
-
-    this._toExecute.apply(this._options.self, args);
-
-    return new Future(this._flow, key);
-};
-
-FuncChain.prototype.self = function(self){
-    this._self = self;
-
-    return this;
-};
-
-FuncChain.prototype.options = function(options){
-    this._options = options;
-
-    return this;
-};
-
-FuncChain.prototype.args = function(){
-    this._args = Array.prototype.slice.call(arguments);
-
-    return this;
 };
 
 Flow.prototype.func = function(toExecute){
     var chain = new FuncChain(this);
     chain._toExecute = toExecute;
 
-    return chain;
+    var func = function(){
+        //Persist the "this" context in case this is getting called through .call or .apply
+        if(chain._self == null) {
+            func.self(this);
+        }
+
+        //If args were never set, use the args passed to the current call
+        if(chain._args === chain._unsetArgs){
+            func.args.apply(func, arguments);
+        }
+
+        return func.sync();
+    };
+
+    func.self = function(self){
+        chain._self = self;
+
+        return func;
+    };
+
+    func.options = function(options){
+        chain._options = options;
+
+        return func;
+    };
+
+    func.args = function(){
+        chain._args = Array.prototype.slice.call(arguments);
+
+        return func;
+    };
+
+    func.queue = function(key){
+        var task = {};
+        task.key = key;
+        task.self = chain._options.self = chain._self;
+        task.toApply = chain._args;
+        task.timeout = chain._options.timeout;
+        task.timeoutIsError = chain._options.timeoutIsError;
+        task.responseFormat = chain._options.responseFormat;
+        task.ignoreError = chain._options.ignoreError;
+        task.dontWait = chain._options.dontWait;
+
+        //If func is specified as a string, lookup the actual function
+        if(typeof chain._toExecute === 'string' && chain._options.self != null){
+            chain._toExecute = chain._options.self[chain._toExecute];
+        }
+
+        task.toExecute = chain._toExecute;
+
+        queue(chain._flow, task);
+    };
+
+    func.sync = function(){
+        var future = func.future();
+
+        return future.result;
+    };
+
+    func.future = function(){
+        var key = Math.random();
+        chain._options.key = key;
+        if(chain._options.self == null){
+            chain._options.self = chain._self;
+        }
+        chain._options.dontWait = true;
+
+        var args = chain._args;
+        args.push(chain._flow.add(chain._options));
+
+        //If func is specified as a string, lookup the actual function
+        if(typeof chain._toExecute === 'string' && chain._options.self != null){
+            chain._toExecute = chain._options.self[chain._toExecute];
+        }
+
+        chain._toExecute.apply(chain._options.self, args);
+
+        return new Future(chain._flow, key);
+    };
+
+    return func;
 };
 
 var asyncblock = function(fn, options) {
