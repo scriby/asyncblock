@@ -792,7 +792,7 @@ suite.addBatch({
 
                 result.sixth = flow.func(echoImmed)('sixth');
 
-                result.seventh = flow.func(echoImmed).args('sixth')();
+                result.seventh = flow.func(echoImmed).args('seventh')();
 
                 self.callback(null, result);
             });
