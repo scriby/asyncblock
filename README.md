@@ -107,14 +107,17 @@ asyncblock(function(flow) {
     var contents = flow.sync(fs.readFile, path10, 'utf8'); //flow.sync is a shorthand for a single task that should be waited on immediately
     console.log(contents);
     
+    
     //flow.func syntax new in 1.4
-    var contents = flow.func(fs.readFile).args(path11, 'utf8').sync(); //Same as previous example
+    var contents = flow.func(fs.readFile)(path11, 'utf8'); //Same as previous example
     console.log(contents);
+    
     
     //Read two files in parallel, then print the contents using queue
     flow.func(fs.readFile).args(path1, 'utf8').queue('contents1');
     flow.func(fs.readFile).args(path2, 'utf8').queue('contents2');
     console.log(flow.wait('contents1') + flow.wait('contents2'));
+    
     
     //Read two files in parallel, then wait for the combined contents to be written to a third file (futures)
     var future1 = flow.func(fs.readFile).args(path12, 'utf8').future();
