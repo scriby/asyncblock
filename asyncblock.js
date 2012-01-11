@@ -627,8 +627,6 @@ Flow.prototype.func = function(toExecute){
 };
 
 var asyncblock = function(fn, options) {
-    var fiber = Fiber.current;
-
     var originalStack;
     if(options != null && options.stack != null){
         originalStack = options.stack;
@@ -640,7 +638,6 @@ var asyncblock = function(fn, options) {
             flow._originalStack = originalStack;
         }
 
-        var originalFlow = fiber._asyncblock_flow;
         fiber._asyncblock_flow = flow;
 
         try {
@@ -658,21 +655,14 @@ var asyncblock = function(fn, options) {
                 });
             }
         } finally {
-            fiber._asyncblock_flow = originalFlow;//Reset this value incase this is a nested fiber
-
             //Prevent memory leak
             fn = null;
             fiber = null;
         }
     };
 
-    if(fiber != null){
-        //If this code is already running in a fiber, we don't need to make a new one
-        fiberContents();
-    } else {
-        fiber = Fiber(fiberContents);
-        fiber.run();
-    }
+    fiber = Fiber(fiberContents);
+    fiber.run();
 };
 
 module.exports = function(fn){

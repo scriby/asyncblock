@@ -1,3 +1,7 @@
+1.6.1
+
+* Made a change to not reuse fiber on the current stack when creating a new asyncblock by default to allow for better parallelization.
+
 1.6
 
 * Re-organized documentation

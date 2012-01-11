@@ -666,11 +666,15 @@ suite.addBatch({
             var result = {};
 
             asyncblock(function(outerFlow){
-                echo('outer', outerFlow.add());
+                echo('outer', outerFlow.add('outer'));
 
                 asyncblock(function(innerFlow1){
+                    var cont = outerFlow.add();
+
                     echo('innerFlow1', innerFlow1.add());
                     result.innerFlow1 = innerFlow1.wait();
+
+                    cont();
                 });
 
                 asyncblock(function(innerFlow2){
@@ -678,16 +682,24 @@ suite.addBatch({
                 });
 
                 asyncblock(function(innerFlow3){
+                    var cont = outerFlow.add();
+
                     echoImmed('innerFlow3', innerFlow3.add());
                     result.innerFlow3 = innerFlow3.wait();
+
+                    cont();
                 });
 
                 asyncblock(function(innerFlow4){
+                    var cont = outerFlow.add();
+
                     echo('innerFlow4', innerFlow4.add('a'));
                     result.innerFlow4a = innerFlow4.wait();
 
                     echo('innerFlow4', innerFlow4.add('b'));
                     result.innerFlow4b = innerFlow4.wait();
+
+                    cont();
                 });
 
                 asyncblock(function(innerFlow5){
@@ -697,6 +709,8 @@ suite.addBatch({
                 });
 
                 asyncblock(function(innerFlow6){
+                    var cont = outerFlow.add();
+
                     process.nextTick(function(){
                         echo('innerFlow6', innerFlow6.add());
 
@@ -704,9 +718,12 @@ suite.addBatch({
                     });
 
                     result.innerFlow6 = innerFlow6.forceWait();
+                    cont();
                 });
 
-                result.outer = outerFlow.wait();
+                result.outer = outerFlow.wait('outer');
+                outerFlow.wait();
+
 
                 self.callback(null, result);
             });
