@@ -690,15 +690,19 @@ var asyncblock = function(fn, options) {
 };
 
 module.exports = function(fn){
-    asyncblock(fn);
-};
-
-module.exports.fullstack = function(fn){
+    //Capture stack trace by default
     var err = new Error();
-    Error.captureStackTrace(err, this.fullstack);
+    Error.captureStackTrace(err, this);
 
     asyncblock(fn, { stack: err.stack });
 };
+
+module.exports.fullstack = module.exports;
+
+module.exports.nostack = function(fn){
+    asyncblock(fn);
+};
+
 
 var Future = function(flow, key){
     this._flow = flow;
