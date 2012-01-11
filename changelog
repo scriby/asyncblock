@@ -1,3 +1,7 @@
+1.6
+
+* Re-organized documentation
+
 1.5.6
 
 * Changing flow.queue to accept function arguments for consistency
