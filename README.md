@@ -163,7 +163,7 @@ asyncblock(function(flow){
 See the API docs for more information.
 
 ## API
-View the [API](https://github.com/scriby/asyncblock/wiki/API) docs
+View the [API](https://github.com/scriby/asyncblock/blob/master/docs/api.md) docs
 
 ## flow.add and flow.wait
 
