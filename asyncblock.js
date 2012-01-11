@@ -2,8 +2,6 @@ require('fibers');
 var events = require('events');
 var util = require('util');
 
-var cachedFiber;
-
 var Flow = function(fiber) {
     this._parallelCount = 0; //The number of currently active tasks
     this._parallelFinished = 0; //The number of finished tasks since the last call to wait
@@ -16,7 +14,6 @@ var Flow = function(fiber) {
     this._light = true; //Determines whether the fiber is currently running or not. true = running
     this._finishedTasks = {}; //Buffers information about finished tasks until results are requested
 
-    this._errorCallbackCalled = false; //Internal state keeping track of whether we've called the error callback or not. We don't want to call it twice.
     this.errorCallback = null; //Call this function when an error occurs
 
     this.taskTimeout = null; //Number of milliseconds the task may run for. Null means no limit.
@@ -51,6 +48,8 @@ var callbackHandler = function(self, task){
         if(callbackCalled){
             if(task.timedOut) {
                 return; //If the task timed out, it's likely the callback will be called twice. Once by the timeout code, and once by the task when it eventually finishes
+            } else if(args[0].__asyncblock_caught === true) {
+                //The callback may be called twice in the case of an error passed which gets thrown, caught, then re-passed
             } else {
                 throw new Error('Task (' + task.key + ') callback called twice!');
             }
@@ -216,32 +215,30 @@ var yieldFiber = function(self) {
 var errorHandler = function(self, task){
     if(task != null && task.result && task.result[0]){
          if(!task.ignoreError) {
-            if(!self._errorCallbackCalled){
-                self._errorCallbackCalled = true;
+            if(task.resultWasAsync) {
+                var err = new Error();
+                Error.captureStackTrace(err, self.wait);
 
-                if(task.resultWasAsync) {
-                    var err = new Error();
-                    Error.captureStackTrace(err, self.wait);
-
-                    //Append the stack from the fiber, which indicates which wait call failed
-                    task.error.stack += '\n=== Pre-async stack ===\n' + err.stack;
-                }
-
-                if(self._originalStack != null){
-                    task.error.stack += '\n=== Pre-asyncblock stack ===\n' + self._originalStack;
-                }
-
-                //If the errorCallback property was set, report the error
-                if(self.errorCallback){
-                    self.errorCallback(task.error);
-                }
-
-                fn = null;
-                fiber = null;
-
-                //Prevent the rest of the code in the fiber from running
-                throw task.error;
+                //Append the stack from the fiber, which indicates which wait call failed
+                task.error.stack += '\n=== Pre-async stack ===\n' + err.stack;
             }
+
+            if(self._originalStack != null){
+                task.error.stack += '\n=== Pre-asyncblock stack ===\n' + self._originalStack;
+            }
+
+            task.error.__asyncblock_caught = true;
+
+            //If the errorCallback property was set, report the error
+            if(self.errorCallback){
+                task.error.__asyncblock_handled = true;
+                self.errorCallback(task.error);
+            }
+
+            fn = null;
+            fiber = null;
+
+            throw task.error;
         }
     }
 };
@@ -643,10 +640,11 @@ var asyncblock = function(fn, options) {
         try {
             fn(flow);
         } catch(e) {
-            if(flow.errorCallback){
-                if(!flow._errorCallbackCalled){
-                    flow._errorCallbackCalled = true;
+            e.__asyncblock_caught = true;
 
+            if(flow.errorCallback){
+                //Make sure we haven't already passed this error to the errorCallback
+                if(!e.__asyncblock_handled) {
                     flow.errorCallback(e);
                 }
             } else {
