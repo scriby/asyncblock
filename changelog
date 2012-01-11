@@ -1,3 +1,8 @@
+1.5.5
+
+* Added flow.set & flow.get
+* Allow passing of args in flow.func.future & flow.func.sync
+
 1.5
 
 * flow.func now returns a function that can be invoked at any time to get the result instead of calling .sync()
