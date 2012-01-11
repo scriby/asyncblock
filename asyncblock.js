@@ -228,7 +228,7 @@ var errorHandler = function(self, task){
             var curr = self;
             while(curr != null){
                 if(curr._originalStack){
-                    e.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
+                    task.error.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
                 }
 
                 curr = curr._parentFlow;
