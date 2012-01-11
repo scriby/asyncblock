@@ -579,6 +579,10 @@ Flow.prototype.func = function(toExecute){
     };
 
     func.sync = function(){
+        if(chain._args === chain._unsetArgs){
+            func.args.apply(func, arguments); //If args not specified, use current
+        }
+
         var future = func.future();
 
         return future.result;
@@ -592,15 +596,18 @@ Flow.prototype.func = function(toExecute){
         }
         chain._options.dontWait = true;
 
-        var args = chain._args;
-        args.push(chain._flow.add(chain._options));
+        if(chain._args === chain._unsetArgs){
+            func.args.apply(func, arguments); //If args not specified, use current
+        }
+
+        chain._args.push(chain._flow.add(chain._options));
 
         //If func is specified as a string, lookup the actual function
         if(typeof chain._toExecute === 'string' && chain._options.self != null){
             chain._toExecute = chain._options.self[chain._toExecute];
         }
 
-        chain._toExecute.apply(chain._options.self, args);
+        chain._toExecute.apply(chain._options.self, chain._args);
 
         return new Future(chain._flow, key);
     };

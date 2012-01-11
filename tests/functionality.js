@@ -731,7 +731,7 @@ suite.addBatch({
                 flow.func(echo).args('eighth').queue('eighth');
 
                 result.first = flow.func(echo).args('first').sync();
-                result.second = flow.func(echoImmed).args('second').sync();
+                result.second = flow.func(echoImmed).sync('second');
 
                 var f1 = flow.func(echo).args('third').future();
                 var f2 = flow.func(echo).args('fourth').future();
@@ -746,7 +746,7 @@ suite.addBatch({
 
                 result.eighth = flow.wait('eighth');
 
-                var f3 = flow.func(echo).args('tenth').future();
+                var f3 = flow.func(echo).future('tenth');
 
                 flow.func(echo).args('ninth').queue();
                 result.ninth = flow.wait();
