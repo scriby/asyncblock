@@ -728,7 +728,7 @@ suite.addBatch({
             var result = {};
 
             asyncblock(function(flow){
-                flow.func(echo).args('eighth').queue('eighth');
+                flow.func(echo).key('eighth').queue('eighth');
 
                 result.first = flow.func(echo).args('first').sync();
                 result.second = flow.func(echoImmed).sync('second');
@@ -753,7 +753,7 @@ suite.addBatch({
 
                 result.tenth = f3.result; //Get this result after the flow.wait call to make sure it doesn't interfere with it
 
-                flow.func('arrayTest').self(obj).options({responseFormat: ['a', 'b', 'c']}).queue('eleventh');
+                flow.func('arrayTest').self(obj).options({responseFormat: ['a', 'b', 'c']}).key('eleventh').queue();
                 result.eleventh = flow.wait('eleventh');
 
                 self.callback(null, result);

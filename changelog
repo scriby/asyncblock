@@ -1,3 +1,7 @@
+1.5.6
+
+* Changing flow.queue to accept function arguments for consistency
+
 1.5.5
 
 * Added flow.set & flow.get

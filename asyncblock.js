@@ -519,6 +519,7 @@ var FuncChain = function(flow){
     this._args = this._unsetArgs =  [];
     this._self = null;
     this._options = {};
+    this._key = null;
 };
 
 Flow.prototype.func = function(toExecute){
@@ -557,9 +558,19 @@ Flow.prototype.func = function(toExecute){
         return func;
     };
 
-    func.queue = function(key){
+    func.key = function(key){
+        chain._key = key;
+
+        return func;
+    };
+
+    func.queue = function(){
+        if(chain._args === chain._unsetArgs){
+            func.args.apply(func, arguments); //If args not specified, use current
+        }
+
         var task = {};
-        task.key = key;
+        task.key = chain._key;
         task.self = chain._options.self = chain._self;
         task.toApply = chain._args;
         task.timeout = chain._options.timeout;

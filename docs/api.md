@@ -24,16 +24,29 @@ Alias of flow.add
 
 If waiting by key on a single task, or waiting on a single task with no key, the result will be returned "raw". If flow.wait was called with no key, and waiting on a task with a key specified, the result will be of the form { key1: value1, key2: value2 }. If the task passes more than one parameter to the callback and no responseFormat is specified, only the second (first is error) will be returned.
 
+### flow.set([options], key, [responseFormat])
+
+Pass the result of flow.set(key) as a callback to asynchronous functions, then use flow.get() to wait for and get the result.
+
+### flow.get(key)
+
+Pass the key used in a previous flow.set call to get the result. If the result is not yet ready, the fiber will yield until it is ready.
+Note that you may call flow.get(key) multiple times with the same key and it will return the stored result.
+
+### flow.del(key)
+
+Used to clear out stored results when using flow.set & flow.get. Not usually necessary, but provided for rare circumstances where
+the garbage collector needs to collect results before the asyncblock ends.
+
 ### flow.func(toExecute)
 
 Flow.func sets up a chained syntax which can be used to build a synchronous call in one line. The argument passed to flow.func is a function to execute, or a string representing a function name (in the case "self" is specified). The chain has the following functions available:
 
 * self(thisObject) - Set the "this" context for the function being called
 * options(objectBag) - Pass an options object bag, similar to when calling flow.add
-* args(...) - Pass these args to the function when its called
-* sync() - Executes the function immediately and returns the result. The fiber yields until the result is ready.
-* future() - Returns a future which may be used to obtain the result of the function at some point in the future.
-* queue() - Runs the task from the fiber as soon as possible. Get the result by making a call to flow.wait(key). If only one task has been queued (or added with flow.add()) with no key, you can get the result by calling flow.wait with no key.
+* sync(args) - Executes the function immediately and returns the result. The fiber yields until the result is ready.
+* future(args) - Returns a future which may be used to obtain the result of the function at some point in the future.
+* queue(args) - Runs the task from the fiber as soon as possible. Get the result by making a call to flow.wait(key). If only one task has been queued (or added with flow.add()) with no key, you can get the result by calling flow.wait with no key.
 * (arguments) - You may execute the result of flow.func (which is a function) at any time. You can also pass in the args here for simplicity.
 
 Examples:
@@ -43,25 +56,23 @@ asyncblock(function(flow){
     //Read the current file and store the results into contents (flow.func's simplest form)
     var contents = flow.func(fs.readFile)(__filename, 'utf8');
 
-    //These are alternative ways to write the above:
-    var contents = flow.func(fs.readFile).args(__filename, 'utf8')();
-    var contents = flow.func(fs.readFile).args(__filename, 'utf8').sync();
+    //This is equivalent to the above example
+    var contents = flow.func(fs.readFile).sync(__filename, 'utf8');
 
     //The following examples are all equivalent and show how to maintain the "this" context if necessary
     var custom1 = flow.func(obj.customAsyncMethod).call(obj, 'test');
     var custom2 = flow.func(obj.customAsyncMethod).apply(obj, ['test']);
-    var custom3 = flow.func(obj.customAsyncMethod).self(obj).args('test')();
     var custom4 = flow.func(obj.customAsyncMethod).self(obj)('test');
-    var custom5 = flow.func('customAsyncMethod').self(obj).args('test').sync();
+    var custom5 = flow.func('customAsyncMethod').self(obj).sync('test');
 
     //Read two files in parallel, then print the contents using queue
-    flow.func(fs.readFile).args(path1, 'utf8').queue('contents1');
-    flow.func(fs.readFile).args(path2, 'utf8').queue('contents2');
+    flow.func(fs.readFile).args(path1, 'utf8').key('contents1').queue();
+    flow.func(fs.readFile).args(path2, 'utf8').key('contents2').queue();
     console.log(flow.wait('contents1') + flow.wait('contents2'));
 
     //Read two files in parallel, then print the contents using futures
-    var future1 = flow.func(fs.readFile).args(path1, 'utf8').future();
-    var future2 = flow.func(fs.readFile).args(path2, 'utf8').future();
+    var future1 = flow.func(fs.readFile).future(path1, 'utf8');
+    var future2 = flow.func(fs.readFile).future(path2, 'utf8');
     console.log(future1.result + future2.result);
 });
 ```
