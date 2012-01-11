@@ -485,6 +485,7 @@ var parseSyncArgs = function(args){
 Flow.prototype.sync = function(options, toExecute/*, apply*/){
     var task = parseSyncArgs(arguments);
     task.key = Math.random();
+    task.dontWait = true;
 
     var callback = this.add(task);
     task.toApply.push(callback);
@@ -726,7 +727,6 @@ module.exports.wrap = function(obj){
 
                     var key = Math.random();
                     var callback;
-
 
                     var options = wrapper._options || {};
 
