@@ -865,6 +865,12 @@ suite.addBatch({
                 echo('sixth', flow.add('sixth'));
                 result.sixth = flow.get('sixth');
 
+                flow.del('sixth');
+                process.nextTick(function(){
+                    echo('seventh', flow.set('sixth'));
+                });
+                result.seventh = flow.get('sixth');
+
                 self.callback(null, result);
             });
         },
@@ -876,7 +882,8 @@ suite.addBatch({
                 third: 'third',
                 fourth: 'fourth',
                 fifth: 'fifth',
-                sixth: 'sixth'
+                sixth: 'sixth',
+                seventh: 'seventh'
             });
         }
     }
