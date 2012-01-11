@@ -225,6 +225,7 @@ var errorHandler = function(self, task){
 
             if(self._originalStack != null){
                 task.error.stack += '\n=== Pre-asyncblock stack ===\n' + self._originalStack;
+                task.error.__asyncblock_orig_stack_added = true;
             }
 
             task.error.__asyncblock_caught = true;
@@ -642,6 +643,10 @@ var asyncblock = function(fn, options) {
             fn(flow);
         } catch(e) {
             e.__asyncblock_caught = true;
+
+            if(flow._originalStack != null && !e.__asyncblock_orig_stack_added){
+                e.stack += '\n=== Pre-asyncblock stack ===\n' + flow._originalStack;
+            }
 
             if(flow.errorCallback){
                 //Make sure we haven't already passed this error to the errorCallback
