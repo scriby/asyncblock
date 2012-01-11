@@ -12,7 +12,7 @@
 
 Pass the result of flow.add() as a callback to asynchronous functions, then use flow.wait() to wait on all added tasks or a single task. This is the most common way to use asyncblock.
 
-Many examples are in the readme.
+See [add / wait documentation](https://github.com/scriby/asyncblock/blob/master/docs/addwait.md) for more details.
 
 ### flow.callback
 
