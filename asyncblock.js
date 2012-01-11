@@ -21,6 +21,8 @@ var Flow = function(fiber) {
 
     this._originalStack = null; //Used to store the stack at the time of asyncblock creation
 
+    this._parentFlow = null;
+
     this.maxParallel = 0; // max number of parallel tasks. maxParallel <= 0 means no limit
 };
 
@@ -223,9 +225,13 @@ var errorHandler = function(self, task){
                 task.error.stack += '\n=== Pre-async stack ===\n' + err.stack;
             }
 
-            if(self._originalStack != null){
-                task.error.stack += '\n=== Pre-asyncblock stack ===\n' + self._originalStack;
-                task.error.__asyncblock_orig_stack_added = true;
+            var curr = self;
+            while(curr != null){
+                if(curr._originalStack){
+                    e.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
+                }
+
+                curr = curr._parentFlow;
             }
 
             task.error.__asyncblock_caught = true;
@@ -631,8 +637,15 @@ var asyncblock = function(fn, options) {
         originalStack = options.stack;
     }
 
+    var parentFlow;
+    if(Fiber.current){
+        parentFlow = Fiber.current._asyncblock_flow;
+    }
+
     var fiberContents = function() {
         var flow = new Flow(fiber);
+        flow._parentFlow = parentFlow;
+
         if(originalStack != null){
             flow._originalStack = originalStack;
         }
@@ -642,11 +655,18 @@ var asyncblock = function(fn, options) {
         try {
             fn(flow);
         } catch(e) {
-            e.__asyncblock_caught = true;
+            if(!e.__asyncblock_caught) {
+                var curr = flow;
+                while(curr != null){
+                    if(curr._originalStack){
+                        e.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
+                    }
 
-            if(flow._originalStack != null && !e.__asyncblock_orig_stack_added){
-                e.stack += '\n=== Pre-asyncblock stack ===\n' + flow._originalStack;
+                    curr = curr._parentFlow;
+                }
             }
+
+            e.__asyncblock_caught = true;
 
             if(flow.errorCallback){
                 //Make sure we haven't already passed this error to the errorCallback
