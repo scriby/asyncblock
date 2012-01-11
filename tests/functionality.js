@@ -837,6 +837,48 @@ suite.addBatch({
             assert.equal(result.first, 'first');
             assert.equal(result.second, 'second');
         }
+    },
+
+    'When using flow.set & flow.get': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            asyncblock(function(flow){
+                echo('first', flow.set('first'));
+                result.first = flow.get('first');
+
+                echo('second', flow.set('second'));
+                result.second = flow.get('second');
+                result.second = flow.get('second'); //Make sure we can get it twice
+
+                echo('third', flow.set('third'));
+                flow.wait(); //Make sure flow.wait doesn't interfere
+                result.third = flow.get('third');
+
+                echoImmed('fourth', flow.set('fourth'));
+                result.fourth = flow.get('fourth');
+
+                echo('fifth', flow.set('fifth'));
+                result.fifth = flow.wait('fifth');
+
+                echo('sixth', flow.add('sixth'));
+                result.sixth = flow.get('sixth');
+
+                self.callback(null, result);
+            });
+        },
+
+        'Results are as expected': function(result){
+            assert.deepEqual(result, {
+                first: 'first',
+                second: 'second',
+                third: 'third',
+                fourth: 'fourth',
+                fifth: 'fifth',
+                sixth: 'sixth'
+            });
+        }
     }
 
 });

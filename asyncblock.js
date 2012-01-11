@@ -173,6 +173,17 @@ Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
     return addTask(this, task);
 };
 
+Flow.prototype.set = function(key, responseFormat) {
+    var task = parseAddArgs(key, responseFormat);
+    task.dontWait = true; //Don't include in results in flow.wait() is called
+
+    if(task.key == null){
+        throw new Error('Key is missing');
+    }
+
+    return addTask(this, task);
+};
+
 Flow.prototype.addIgnoreError = Flow.prototype.callbackIgnoreError = function(key, responseFormat) {
     var task = parseAddArgs(key, responseFormat);
     task.ignoreError = true;
@@ -416,9 +427,6 @@ var waitForKey = function(self, key){
 
     var task = self._finishedTasks[key];
 
-    //Clean up
-    delete self._finishedTasks[key];
-
     if(task && !task.dontWait) {
         self._parallelCount--;
         self._parallelFinished--;
@@ -429,10 +437,27 @@ var waitForKey = function(self, key){
 
 Flow.prototype.wait = function(key) {
     if(key != null){
-        return waitForKey(this, key);
+        var result =  waitForKey(this, key);
+
+        //Clean up
+        delete this._finishedTasks[key];
+
+        return result;
     } else {
         return wait(this);
     }
+};
+
+Flow.prototype.get = function(key){
+    if(key == null){
+        throw new Error('key is missing');
+    }
+
+    return waitForKey(this, key);
+};
+
+Flow.prototype.del = function(key){
+    delete this._finishedTasks[key];
 };
 
 Flow.prototype.forceWait = function() {
