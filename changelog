@@ -1,3 +1,8 @@
+1.6.2
+
+* Fixing an issue with an error not getting reported properly with nested asyncblocks when one asyncblock doesn't set an errorCallback
+* Fixing an issue that occured if flow.wait was called within a function called by flow.sync
+
 1.6.1
 
 * Made a change to not reuse fiber on the current stack when creating a new asyncblock by default to allow for better parallelization.
