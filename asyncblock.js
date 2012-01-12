@@ -19,7 +19,7 @@ var Flow = function(fiber) {
     this.taskTimeout = null; //Number of milliseconds the task may run for. Null means no limit.
     this.timeoutIsError = null; //If a timeout should be treated as an error, or if the task should simply be aborted and flow continue.
 
-    this._originalStack = null; //Used to store the stack at the time of asyncblock creation
+    this._originalError = null; //Used to store the stack at the time of asyncblock creation
 
     this._parentFlow = null;
 
@@ -227,8 +227,8 @@ var errorHandler = function(self, task){
 
             var curr = self;
             while(curr != null){
-                if(curr._originalStack){
-                    task.error.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
+                if(curr._originalError){
+                    task.error.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalError.stack;
                 }
 
                 curr = curr._parentFlow;
@@ -632,9 +632,9 @@ Flow.prototype.func = function(toExecute){
 };
 
 var asyncblock = function(fn, options) {
-    var originalStack;
+    var originalError;
     if(options != null && options.stack != null){
-        originalStack = options.stack;
+        originalError = options.stack;
     }
 
     var parentFlow;
@@ -646,8 +646,8 @@ var asyncblock = function(fn, options) {
         var flow = new Flow(fiber);
         flow._parentFlow = parentFlow;
 
-        if(originalStack != null){
-            flow._originalStack = originalStack;
+        if(originalError != null){
+            flow._originalError = originalError;
         }
 
         fiber._asyncblock_flow = flow;
@@ -658,8 +658,8 @@ var asyncblock = function(fn, options) {
             if(!e.__asyncblock_caught) {
                 var curr = flow;
                 while(curr != null){
-                    if(curr._originalStack){
-                        e.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalStack;
+                    if(curr._originalError){
+                        e.stack += '\n=== Pre-asyncblock stack ===\n' + curr._originalError.stack;
                     }
 
                     curr = curr._parentFlow;
@@ -692,9 +692,10 @@ var asyncblock = function(fn, options) {
 module.exports = function(fn){
     //Capture stack trace by default
     var err = new Error();
-    Error.captureStackTrace(err, this);
+    //Currently not capturing stack trace as it's about 60% slower than just making the error (and just takes 1 frame off stack trace)
+    //Error.captureStackTrace(err, module.exports);
 
-    asyncblock(fn, { stack: err.stack });
+    asyncblock(fn, { stack: err });
 };
 
 module.exports.fullstack = module.exports;

@@ -108,6 +108,9 @@ suite.addBatch({
         'Call stack is preserved': function(err, result){
             var index = err.stack.indexOf('Pre-async stack');
             assert.greater(index, 0);
+
+            var index = err.stack.indexOf('Pre-asyncblock stack');
+            assert.greater(index, 0);
         }
     }
 });
