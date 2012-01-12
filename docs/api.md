@@ -113,14 +113,6 @@ asyncblock(function(flow){
 });
 ```
 
-### flow.addIgnoreError([options], [key], [responseFormat])
-
-Shorthand for flow.add({ ignoreError: true }, ...).
-
-### flow.callbackIgnoreError
-
-Alias of flow.addIgnoreError
-
 ### flow.queue([options], [key], [responseFormat], toExecute)
 
 * Options, key, and responseFormat are the same as in flow.add
@@ -129,10 +121,6 @@ Alias of flow.addIgnoreError
 In general, there is little benefit to using flow.queue. The syntax is a little more verbose, and it requires the creation of another closure. The only time its use is required is when using flow.maxParallel and adding tasks asynchronously (from outside the fiber). More detail is in the readme.
 
 As of 1.4.5, you can use the queue method of the flow.func chained syntax to achieve the same effect.
-
-### flow.queueIgnoreError
-
-Shorthand for flow.queue({ ignoreError: true }, ...).
 
 ### flow.maxParallel
 
@@ -164,27 +152,16 @@ asyncblock(function(flow){
 });
 ```
 
-### asyncblock.fullstack
+### asyncblock.nostack
 
-Similar to asyncblock, but retains more stack trace information. Typically when using asyncblock, the stack before the asyncblock is defined is lost.
-
-Using asyncblock.fullstack incurs about a 15x performance penalty over asyncblock. Unless you're in a tight loop, this won't be a big deal.
+When creating an asyncblock, the current stack is captured so it can be used to construct full stack traces if an error occurs.
+This incurs a small performance penalty, but is generally worthwhile.
 
 ```javascript
 var asyncblock = require('asyncblock');
 
-asyncblock.fullstack(function(flow){
-    //If errors occur in here, they will get more detail added to their stack trace
-});
-```
-
-You can also do something like this if you always want to use the fullstack version:
-
-```javascript
-var asyncblock = require('asyncblock').fullstack;
-
-asyncblock(function(flow){
-    //If errors occur in here, they will get more detail added to their stack trace
+asyncblock.nostack(function(flow){
+    //If errors occur in here, they will get less detail added to their stack trace
 });
 ```
 

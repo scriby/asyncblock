@@ -903,6 +903,26 @@ suite.addBatch({
                 seventh: 'seventh'
             });
         }
+    },
+
+    'When creating asyncblocks using fullstack & nostack': {
+        topic: function(){
+            var self = this;
+
+            asyncblock.nostack(function(flow){
+
+            });
+
+            asyncblock.fullstack(function(flow){
+
+            });
+
+            self.callback();
+        },
+
+        'No errors occur': function(){
+
+        }
     }
 
 });

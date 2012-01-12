@@ -32,6 +32,3 @@ Error
     at .../sourcecode/asyncblock/asyncblock.js:12:4
 
 ```
-
-In 1.3.0, a change was made which reuses the current fiber if an asyncblock is called from another asyncblock or otherwise nested.
-This has a nice side effect of keeping the stack trace in tact automatically through the entire flow of the code.
