@@ -1,3 +1,10 @@
+1.6.5
+
+* Make capturing full stack traces the default behavior (use asyncblock.nostack for old behavior)
+* If an exception is thrown directly from the fiber, make sure full stack trace information gets appended to it
+* Tie together call stacks from nested asyncblocks (meaning that if asyncblock is used every time before making an async call, full stack traces will always be preserved)
+* Improve performance of capturing the initial stack trace
+
 1.6.2
 
 * Fixing an issue with an error not getting reported properly with nested asyncblocks when one asyncblock doesn't set an errorCallback
