@@ -1,3 +1,7 @@
+1.6.6
+
+* Adjusting behavior around double callback logic, as sometimes it's necessary when one asyncblock's error handler came from a flow.add()
+
 1.6.5
 
 * Make capturing full stack traces the default behavior (use asyncblock.nostack for old behavior)

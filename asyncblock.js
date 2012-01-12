@@ -48,13 +48,7 @@ var callbackHandler = function(self, task){
         var args = Array.prototype.slice.call(arguments);
 
         if(callbackCalled){
-            if(task.timedOut) {
-                return; //If the task timed out, it's likely the callback will be called twice. Once by the timeout code, and once by the task when it eventually finishes
-            } else if(args[0].__asyncblock_caught === true) {
-                //The callback may be called twice in the case of an error passed which gets thrown, caught, then re-passed
-            } else {
-                throw new Error('Task (' + task.key + ') callback called twice!');
-            }
+            return;
         }
 
         callbackCalled = true; //Prevent this callback from getting called again
@@ -671,6 +665,7 @@ var asyncblock = function(fn, options) {
             if(flow.errorCallback){
                 //Make sure we haven't already passed this error to the errorCallback
                 if(!e.__asyncblock_handled) {
+                    e.__asyncblock_handled = true;
                     flow.errorCallback(e);
                 }
             } else {

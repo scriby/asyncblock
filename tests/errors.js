@@ -158,29 +158,23 @@ suite.addBatch({
 
             var doubleCallback = function(callback){
                 process.nextTick(function(){
-                    try {
-                        callback();
-                    } catch(e){
-                        self.callback();
-                    }
+                    callback();
                 });
 
                 process.nextTick(function(){
-                    try {
-                        callback();
-                    } catch(e){
-                        self.callback();
-                    }
+                    callback();
                 });
             };
 
             asyncblock(function(flow){
                 doubleCallback(flow.add());
                 flow.wait();
+
+                self.callback();
             });
         },
 
-        'Error is thrown': function(err, result){
+        'Error is not thrown': function(err, result){
 
         }
     }
