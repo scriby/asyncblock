@@ -179,6 +179,7 @@ var parseAddArgs = function(key, responseFormat){
 
 Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
     var task = parseAddArgs(key, responseFormat);
+    task.caller = this.add.caller;
 
     return addTask(this, task);
 };
@@ -186,6 +187,7 @@ Flow.prototype.add = Flow.prototype.callback = function(key, responseFormat){
 Flow.prototype.set = function(key, responseFormat) {
     var task = parseAddArgs(key, responseFormat);
     task.dontWait = true; //Don't include in results in flow.wait() is called
+    task.caller = this.set.caller;
 
     if(task.key == null){
         throw new Error('Key is missing');
@@ -197,6 +199,7 @@ Flow.prototype.set = function(key, responseFormat) {
 Flow.prototype.addIgnoreError = Flow.prototype.callbackIgnoreError = function(key, responseFormat) {
     var task = parseAddArgs(key, responseFormat);
     task.ignoreError = true;
+    task.caller = this.addIgnoreError.caller;
 
     return addTask(this, task);
 };
@@ -367,6 +370,7 @@ var queue = function(self, task){
 
 Flow.prototype.queue = function(key, responseFormat, toExecute) {
     var task = parseQueueArgs(key, responseFormat, toExecute);
+    task.caller = this.queue.caller;
 
     queue(this, task);
 };
@@ -374,6 +378,7 @@ Flow.prototype.queue = function(key, responseFormat, toExecute) {
 Flow.prototype.queueIgnoreError = function(key, responseFormat, toExecute){
     var task = parseQueueArgs(key, responseFormat, toExecute);
     task.ignoreError = true;
+    task.caller = this.queueIgnoreError.caller;
 
     queue(this, task);
 };
@@ -517,8 +522,14 @@ Flow.prototype.sync = function(options, toExecute/*, apply*/){
     if(arguments.length === 1 && typeof arguments[0] !== 'function'){
         //flow.sync(asyncFunction(..., flow.add()); usage
         var lastTask = this._lastAddedTask;
+
         if(lastTask == null){
             throw new Error('flow.sync usage not correct -- no task has been added');
+        }
+
+        //If the callers don't match, they added a task inside the function call, and we're going to assume the wrong task
+        if(lastTask.caller !== this.sync.caller){
+            throw new Error('flow.sync usage not correct - you may not add more tasks in a nested function');
         }
 
         return this.wait(lastTask.key);

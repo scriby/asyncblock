@@ -228,6 +228,40 @@ suite.addBatch({
 
 });
 
+suite.addBatch({
+    'When trying to use flow.sync incorrectly': {
+        topic: function(){
+            var self = this;
+            var errors = {};
 
+            var testFunc = function(flow, callback){
+                flow.add();
+
+                callback();
+            };
+
+            asyncblock(function(flow){
+                try{
+                    flow.sync(testFunc(flow, flow.add()));
+                } catch(e){
+                    errors.first = e;
+                }
+
+                try{
+                    flow.sync(null);
+                } catch(e){
+                    errors.second = e;
+                }
+
+                self.callback(null, errors);
+            });
+        },
+
+        'The correct errors occurred': function(errors){
+            assert.instanceOf(errors.first, Error);
+            assert.instanceOf(errors.second, Error);
+        }
+    }
+});
 
 suite.export(module);
