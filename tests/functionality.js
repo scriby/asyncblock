@@ -931,7 +931,7 @@ suite.addBatch({
             var result = {};
 
             asyncblock(function(flow){
-                result.first = flow.sync(echo('first', flow.callback()));
+                result.first = flow.sync(echo('first', flow.add()));
 
                 result.second = flow.sync(echoImmed('second', flow.callback()));
 
@@ -942,6 +942,38 @@ suite.addBatch({
         'The results are as expected': function(result){
             assert.equal(result.first, 'first');
             assert.equal(result.second, 'second');
+        }
+    },
+
+    'When using 1.7 flow.future syntax': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            asyncblock(function(flow){
+                var future1 = flow.future(echo('first', flow.add()));
+                var future2 = flow.future(echoImmed('second', flow.callback()));
+
+                var future3 = flow.future();
+                echo('third', future3);
+
+                var future4 = flow.future();
+                echoImmed('fourth', future4);
+
+                result.first = future1.result;
+                result.second = future2.result;
+                result.third = future3.result;
+                result.fourth = future4.result;
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'first');
+            assert.equal(result.second, 'second');
+            assert.equal(result.third, 'third');
+            assert.equal(result.fourth, 'fourth');
         }
     }
 

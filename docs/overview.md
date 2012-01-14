@@ -89,6 +89,9 @@ asyncblock(function(flow){
     //Wait for each task to finish separately
     var contents1 = flow.wait('contents1');
     var contents2 = flow.wait('contents2');
+
+    //One-liner syntax
+    var contents = flow.sync(fs.readFile(path, 'utf8', flow.callback())); //flow.add can also be used in place of flow.callback
 });
 ```
 
@@ -104,7 +107,35 @@ asyncblock(function(flow){
 ### Cons
 
 * May require additional variables to be declared (if moving the result of flow.wait into a variable)
-* Not possible to write as a "one-liner" (if moving the result of flow.wait into a variable)
+* "One-liner" syntax is a little more verbose than other techniques
+
+## flow.future
+
+Creates a future which can be used to get the result of an asynchronous function. When .result is accessed, the current fiber will
+yield until the result is ready.
+
+Simple example:
+
+```javascript
+asyncblock(function(flow){
+    var future = flow.future();
+    fs.readFile(path, 'utf8', future);
+    var contents = future.result;
+
+    //Or, like this
+    var future = flow.future(fs.readFile(path, 'utf8', flow.callback())); //flow.add can be used in place of flow.callback
+    var contents = future.result;
+});
+```
+
+### Pros
+
+* Has same advantages as flow.get / flow.set, but might be desired based on personal preference
+
+### Cons
+
+* Same cons as flow.get / flow.set
+* Syntax a little more verbose than flow.get / flow.set
 
 ## flow.func
 
@@ -178,7 +209,8 @@ asyncblock(function(flow){
 
 ## flow.sync
 
-Flow.sync is yet another shorthand for synchronous execution.
+Flow.sync is yet another shorthand for synchronous execution. Note that this is the standalone flow.sync function --
+not the usage that converts a flow.add / wait to a one-liner.
 
 Simple example:
 

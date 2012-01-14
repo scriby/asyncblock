@@ -548,6 +548,41 @@ Flow.prototype.sync = function(options, toExecute/*, apply*/){
     }
 };
 
+Flow.prototype.future = function(options){
+    if(arguments.length === 1 && Object.prototype.toString.call(options) !== '[object Object]'){
+        //flow.future(asyncFunction(..., flow.add()); usage
+        var lastTask = this._lastAddedTask;
+
+        if(lastTask == null){
+            throw new Error('flow.future usage not correct -- no task has been added');
+        }
+
+        //If the callers don't match, they added a task inside the function call, and we're going to assume the wrong task
+        if(lastTask.caller !== this.future.caller){
+            throw new Error('flow.future usage not correct - you may not add more tasks in a nested function');
+        }
+
+        return new Future(this, lastTask.key);
+    } else {
+        //var future = flow.future();
+        //asyncFunction(..., flow.future()); usage
+        var task = parseAddArgs(arguments);
+        task.key = getNextTaskId();
+        task.dontWait = true;
+
+        addTask(this, task);
+
+        var callback = function(){
+            task.callback.apply(null, arguments);
+        };
+
+        var future = new Future(this, task.key);
+        callback.__proto__ = future;
+
+        return callback;
+    }
+};
+
 Flow.prototype.doneAdding = function(){
     if(!this._forceWait) {
         throw new Error('doneAdding should only be called in conjunction with forceWait');

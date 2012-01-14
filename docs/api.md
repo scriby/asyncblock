@@ -113,6 +113,48 @@ asyncblock(function(flow){
 });
 ```
 
+### flow.sync(async task execution)
+
+Pass the entire result of an async task execution to flow.sync to create a synchronous wrapper for the last added task.
+
+For example:
+
+```javascript
+asyncblock(function(flow){
+    //Read synchronously
+    var contents = flow.sync(fs.readFile(path, 'utf8', flow.callback()));
+
+    //Write synchronously
+    flow.sync(fs.writeFile(path, contents, flow.callback()));
+});
+```
+
+### flow.future(options)
+
+* options:
+    * Same as add.options
+
+Create a future which can be used to obtain the result of an asynchronous task.
+
+```javascript
+asyncblock(function(flow){
+    var future = flow.future();
+    fs.readFile(path, 'utf8', future);
+    var contents = future.result;
+});
+```
+
+### flow.future(async task execution)
+
+Pass the entire result of an async task execution to flow.future to create a future for the last added task.
+
+```javascript
+asyncblock(function(flow){
+    var future = flow.future(fs.readFile(path, 'utf8', flow.callback())); //flow.add can be used in place of flow.callback
+    var contents = future.result;
+});
+```
+
 ### flow.queue([options], [key], [responseFormat], toExecute)
 
 * Options, key, and responseFormat are the same as in flow.add
