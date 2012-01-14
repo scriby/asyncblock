@@ -39,7 +39,9 @@ var getNextTaskId = (function(){
     var taskId = 1;
 
     return function(){
-        return taskId++;
+        ++taskId;
+
+        return '_ab_' + taskId;
     };
 })();
 
