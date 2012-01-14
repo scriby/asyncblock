@@ -23,6 +23,8 @@ var Flow = function(fiber) {
 
     this._parentFlow = null;
 
+    this._lastAddedTask = null;
+
     this.maxParallel = 0; // max number of parallel tasks. maxParallel <= 0 means no limit
 };
 
@@ -32,6 +34,14 @@ util.inherits(Flow, events.EventEmitter);
 Flow.prototype.__defineGetter__("unfinishedCount", function(){
     return this._parallelCount - this._parallelFinished;
 });
+
+var getNextTaskId = (function(){
+    var taskId = 1;
+
+    return function(){
+        return taskId++;
+    };
+})();
 
 var callbackHandler = function(self, task){
     if(self.taskTimeout != null && task.timeout == null){
@@ -61,18 +71,11 @@ var callbackHandler = function(self, task){
             self._parallelFinished++;
         }
 
-        if(self._parallelCount === 1 && task.key == null){
-            task.key = '__defaultkey__';
-        }
-
         task.result = args;
         var val = resultHandler(self, task);
 
         if(task.key != null){
             task.formattedResult = val;
-        }
-
-        if(task.key != null){
             self._finishedTasks[task.key] = task;
         }
 
@@ -118,6 +121,16 @@ var callbackHandler = function(self, task){
 
 var addTask = function(self, task){
     task._flow = self;
+    self._lastAddedTask = task;
+
+    if(task.key == null) {
+        if(self._parallelCount === 0){
+            task.key = '__defaultkey__';
+        } else {
+            task.key = getNextTaskId();
+            task.dontIncludeInResult = true;
+        }
+    }
 
     while (self.maxParallel > 0 && self.unfinishedCount >= self.maxParallel) {
         // too many fibers running.  Yield until the fiber count goes down.
@@ -258,13 +271,6 @@ var errorParser = function(self, task) {
 
         task.error = err;
 
-        if(task.ignoreError){
-            //If ignoring the error, make sure it has a key so the return value (the error) gets stored
-            if(task.key == null){
-                task.key = '_!_error_!_';
-            }
-        }
-
         return err;
     }
 };
@@ -382,12 +388,22 @@ var wait = function(self) {
     }
 
     var toReturn;
+    var err;
 
     //If add was called once and no parameter name was set, just return the value as is
     if(self._parallelCount === 1 && '__defaultkey__' in self._finishedTasks) {
-        toReturn = self._finishedTasks.__defaultkey__.formattedResult;
+        var task = self._finishedTasks.__defaultkey__;
+        if(task.error){
+            err = task.error;
+        }
+
+        toReturn = task.formattedResult;
 
         delete self._finishedTasks.__defaultkey__;
+
+        if(self._lastAddedTask != null && self._lastAddedTask.key === task.key){
+            self._lastAddedTask = null;
+        }
     } else {
         delete self._finishedTasks.__defaultkey__;
 
@@ -397,21 +413,28 @@ var wait = function(self) {
             var task = self._finishedTasks[key];
 
             if(!task.dontWait) {
-                toReturn[key] = task.formattedResult;
+                if(task.error){
+                    err = task.error;
+                }
+
+                if(!task.dontIncludeInResult){
+                    toReturn[key] = task.formattedResult;
+                }
+
                 delete self._finishedTasks[key];
+
+                if(self._lastAddedTask != null && self._lastAddedTask.key === task.key){
+                    self._lastAddedTask = null;
+                }
             }
         });
-    }
-
-    if(toReturn != null && toReturn['_!_error_!_'] != null){
-        toReturn = toReturn['_!_error_!_'];
     }
 
     //Prepare for the next run
     self._parallelFinished = 0;
     self._parallelCount = 0;
 
-    return toReturn;
+    return err || toReturn;
 };
 
 var waitForKey = function(self, key){
@@ -428,6 +451,11 @@ var waitForKey = function(self, key){
     if(task && !task.dontWait) {
         self._parallelCount--;
         self._parallelFinished--;
+    }
+
+    //Clear last added task if it refers to this task
+    if(self._lastAddedTask != null && self._lastAddedTask.key === task.key){
+        self._lastAddedTask = null;
     }
 
     return task.formattedResult;
@@ -484,16 +512,27 @@ var parseSyncArgs = function(args){
 };
 
 Flow.prototype.sync = function(options, toExecute/*, apply*/){
-    var task = parseSyncArgs(arguments);
-    task.key = Math.random();
-    task.dontWait = true;
+    if(arguments.length === 1 && typeof arguments[0] !== 'function'){
+        //flow.sync(asyncFunction(..., flow.add()); usage
+        var lastTask = this._lastAddedTask;
+        if(lastTask == null){
+            throw new Error('flow.sync usage not correct -- no task has been added');
+        }
 
-    var callback = this.add(task);
-    task.toApply.push(callback);
+        return this.wait(lastTask.key);
+    } else {
+        //flow.sync(asyncfunction, ...); usage
+        var task = parseSyncArgs(arguments);
+        task.key = getNextTaskId();
+        task.dontWait = true;
 
-    task.toExecute.apply(task.self, task.toApply);
+        var callback = this.add(task);
+        task.toApply.push(callback);
 
-    return this.wait(task.key);
+        task.toExecute.apply(task.self, task.toApply);
+
+        return this.wait(task.key);
+    }
 };
 
 Flow.prototype.doneAdding = function(){
@@ -599,7 +638,7 @@ Flow.prototype.func = function(toExecute){
     };
 
     func.future = function(){
-        var key = Math.random();
+        var key = getNextTaskId();
         chain._options.key = key;
         if(chain._options.self == null){
             chain._options.self = chain._self;
@@ -750,7 +789,7 @@ module.exports.wrap = function(obj){
                         throw new Error('Asyncblock sync methods must be called from within an asyncblock.');
                     }
 
-                    var key = Math.random();
+                    var key = getNextTaskId();
                     var callback;
 
                     var options = wrapper._options || {};

@@ -923,6 +923,26 @@ suite.addBatch({
         'No errors occur': function(){
 
         }
+    },
+
+    'When using 1.7 flow.sync syntax': {
+        topic: function(){
+            var self = this;
+            var result = {};
+
+            asyncblock(function(flow){
+                result.first = flow.sync(echo('first', flow.callback()));
+
+                result.second = flow.sync(echoImmed('second', flow.callback()));
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'first');
+            assert.equal(result.second, 'second');
+        }
     }
 
 });
