@@ -237,4 +237,97 @@ asyncblock(function(flow){
 });
 ```
 
-Warning: Don't attempt to call functions that aren't written in async style with this method, as it may result in a memory leak.
+Warning: Don't attempt to call functions that aren't written in async style with this method, as it won't work and may result in a memory leak.
+
+### asyncblock.enumerator(function)
+
+Returns an Enumerator, which has the method moveNext and a getter named current.
+
+Enumerators may yield results asynchronously as long as the code calling the enumerator is also in an asyncblock. If the calling code is
+not in an asyncblock, the enumerator must return synchronously.
+
+One of my favorite uses of this sort of thing is graph walking code. It allows you to separate the traversal logic from the
+business logic.
+
+Here is an example of walking a tree:
+
+```javascript
+var sampleTree = {
+    name: 'root',
+    left: {
+        name: 'L1',
+        left: {
+            name: 'L2'
+        },
+        right: {
+            name: 'R2'
+        }
+    },
+    right: {
+        name: 'R1',
+        right: {
+            name: 'R3'
+        }
+    }
+};
+
+var getPreOrderEnumerator = function(tree) {
+    return asyncblock.enumerator(function(flow){
+        var walk = function(curr){
+            if(curr == null){
+                return;
+            }
+
+            flow.yield(curr);
+            walk(curr.left);
+            walk(curr.right);
+        };
+
+        walk(tree);
+    });
+};
+
+//Use the enumerator
+var preOrder = getPreOrderEnumerator(sampleTree);
+
+while(preOrder.moveNext()){
+    console.log(preOrder.current.name);
+}
+
+//Prints
+/*
+root
+L1
+L2
+R2
+R1
+R3
+*/
+```
+
+Asynchronous generator:
+
+```javascript
+var echo = function(message, callback){
+    process.nextTick(
+        function(){
+            callback(null, message);
+        }
+    );
+};
+
+var inc = asyncblock.enumerator(function(flow){
+    for(var i = 1; i <= 10; i++){
+        echo(i, flow.add());
+        var num = flow.wait();
+
+        flow.yield(num);
+    }
+});
+
+asyncblock(function(flow){
+    while(inc.moveNext()){
+        console.log(inc.current);
+    }
+});
+```

@@ -264,6 +264,25 @@ asyncblock(function(flow){
 
 * No reason to use it except when it's required
 
+## Enumerators
+
+Use enumerators to implement lazy lists, iterators, or other similar things. If you have used the "yield return" keyword
+in .NET, this is very similar. See the API documentation for more information.
+
+A simple enumerator that counts from 1 to 10:
+
+```javascript
+var inc = asyncblock.generator(function(flow){
+    for(var i = 1; i <= 10; i++){
+        flow.yield(i);
+    }
+});
+
+while(inc.moveNext())){
+    console.log(inc.current);
+}
+```
+
 ## API doc
 
 Be sure to check the API documentation for more information. Special options (like timeouts, result formatting, etc.)

@@ -25,6 +25,8 @@ var Flow = function(fiber) {
 
     this._lastAddedTask = null;
 
+    this._isGenerator = false;
+
     this.maxParallel = 0; // max number of parallel tasks. maxParallel <= 0 means no limit
 };
 
@@ -712,20 +714,47 @@ Flow.prototype.func = function(toExecute){
     return func;
 };
 
+var Enumerator = function(exec){
+    this.exec = exec;
+    this.curr = null;
+};
+
+Enumerator.prototype.__defineGetter__('current', function(){
+    return this.curr;
+});
+
+var undef = (function(){})();
+Enumerator.prototype.moveNext = function(){
+    this.curr = this.exec();
+
+    return this.curr !== undef;
+};
+
 var asyncblock = function(fn, options) {
+    if(options == null){
+        options = {};
+    }
+
     var originalError;
-    if(options != null && options.stack != null){
+    if(options.stack != null){
         originalError = options.stack;
     }
 
-    var parentFlow;
-    if(Fiber.current){
-        parentFlow = Fiber.current._asyncblock_flow;
+    if(Fiber.current != null){
+        var parentFlow = Fiber.current._asyncblock_flow;
     }
 
+    var fiber;
+
+    var flow = new Flow();
+
     var fiberContents = function() {
-        var flow = new Flow(fiber);
+        flow._fiber = fiber;
         flow._parentFlow = parentFlow;
+
+        if(options.isGenerator){
+            flow._isGenerator = true;
+        }
 
         if(originalError != null){
             flow._originalError = originalError;
@@ -761,6 +790,8 @@ var asyncblock = function(fn, options) {
                 });
             }
         } finally {
+            flow.emit('end');
+
             //Prevent memory leak
             fn = null;
             fiber = null;
@@ -768,7 +799,60 @@ var asyncblock = function(fn, options) {
     };
 
     fiber = Fiber(fiberContents);
-    fiber.run();
+
+    if(options.isGenerator){
+        //THe generator is initially stopped
+        flow._light = false;
+        var runFiber = fiber.run.bind(fiber);
+
+        var run = function(){
+            //Fiber is done generating
+            if(fiber != null){
+                return runFiber();
+            }
+        };
+
+         var enumerator = function(){
+             //Async generator support
+            if(Fiber.current != null){
+                var outerFlow = Fiber.current._asyncblock_flow;
+
+                var key = getNextTaskId();
+
+                var resume = outerFlow.add(key);
+                var callback = function(value){
+                    resume(null, value);
+                };
+
+                flow.on('yield', callback);
+
+                //If the generator doesn't end up generating anything, we don't want to wait forever
+                flow.on('end', callback);
+
+                //We need to delay the running of the generator in case it returns results without blocking
+                process.nextTick(function(){
+                    if(!flow._light){
+                        run();
+                    }
+                });
+
+                var result = outerFlow.wait(key);
+
+                flow.removeListener('end', callback);
+                flow.removeListener('yield', callback);
+
+                return result;
+            } else {
+                return run();
+            }
+        };
+
+        enumerator.__proto__ = new Enumerator(enumerator);
+
+        return enumerator;
+    } else {
+        fiber.run();
+    }
 };
 
 module.exports = function(fn){
@@ -786,6 +870,23 @@ module.exports.nostack = function(fn){
     asyncblock(fn);
 };
 
+module.exports.enumerator = function(fn){
+    var run = asyncblock(fn, { isGenerator: true });
+
+    return run;
+};
+
+Flow.prototype.yield = function(value){
+    if(!this._isGenerator){
+        throw new Error("flow.yield may only be called from an asyncblock.generator");
+    }
+
+    if(this.listeners('yield').length > 0){
+        this.emit('yield', value);
+    } else {
+        Fiber.yield(value);
+    }
+};
 
 var Future = function(flow, key){
     this._flow = flow;

@@ -1,4 +1,8 @@
-1.7
+1.8.0
+
+* Enumerators!
+
+1.7.0
 
 * Adding new flow.sync usage
     * var contents = flow.sync(fs.readFile(path, 'utf8', flow.add()));

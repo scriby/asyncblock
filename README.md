@@ -162,8 +162,8 @@ See [timeout documentation](https://github.com/scriby/asyncblock/blob/master/doc
 
 ## Concurrency
 
-Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread. It just changes
-how the code can be written to manage the asynchronous control flow.
+Both fibers, and this module, do not increase concurrency in nodejs. There is still only one thread executing at a time.
+Fibers are threads which are allowed to pause and resume where they left off without blocking the event loop.
 
 ## Risks
 
