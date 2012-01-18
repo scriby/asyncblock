@@ -819,7 +819,7 @@ var asyncblock = function(fn, options) {
 
                 var key = getNextTaskId();
 
-                var resume = outerFlow.add(key);
+                var resume = outerFlow.add({key: key, dontWait: true});
                 var callback = function(value){
                     resume(null, value);
                 };
