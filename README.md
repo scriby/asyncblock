@@ -78,25 +78,17 @@ asyncblock(function(flow) {
     fs.readFile(path2, 'utf8', flow.add('secondFile')); //Store the result of the second read under the key "secondFile"
     var files = flow.wait(); //Both file reads are running in parallel. Wait for them to finish.
     
-    fs.writeFile(path3, 'utf8', files.firstFile + files.secondFile);
+    fs.writeFile(path3, 'utf8', files.firstFile + files.secondFile, flow.add());
     flow.wait(); //Wait for the combined contents to be written to a third file
     
     fs.readFile(path5, 'utf8', flow.set('contents1')); //get & set can be used instead of add & wait
     fs.readFile(path6, 'utf8', flow.set('contents2'));
-    console.log(flow.get('contents2'); //Passing a key to flow.get will wait on just that task
-    var contents1 = flow.get('contents1');
-    
-    fs.readFile(path7, 'utf8', flow.add('firstFile'));
-    fs.readFile(path8, 'utf8', flow.add('secondFile'));
-    fs.writeFile(path9, 'utf8', flow.wait('firstFile') + flow.wait('secondFile'); //Write the combined contents. Keys can also be passed to wait.
-    flow.wait(); //Wait for the combined contents to be written to a third file
+    console.log(flow.get('contents1')); //Passing a key to flow.get or flow.wait will wait on just that task
 
-    var contents = flow.sync(fs.readFile, path10, 'utf8'); //flow.sync is a shorthand for a single task that should be waited on immediately
-    console.log(contents);
+    //Wrap with flow.sync to convert to a one-liner
+    var contents = flow.sync( fs.readFile(path10, 'utf8', flow.callback()) ); 
     
-    //flow.func syntax new in 1.4
-    var contents = flow.func(fs.readFile)(path11, 'utf8'); //Same as previous example
-    console.log(contents);
+    //See overview & API docs for more extensive description of techniques
 });
 ```
 
