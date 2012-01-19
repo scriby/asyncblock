@@ -3,7 +3,7 @@ OS: Linux 2.6.38-8-generic
 CPU: AMD Athlon(tm) II X2 260 Processor x64 3107 Mhz
 Virtual machine: true
 ----
-asyncblock version: 1.8.0
+asyncblock version: 1.9.0
 node version: v0.6.6
 ----
 Memory: { rss: '12 MB', heapTotal: '6 MB', heapUsed: '4 MB' }
