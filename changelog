@@ -1,3 +1,9 @@
+1.9.0
+
+* Refactored code for easier maintenance
+* Created benchmark tests to detect performance and memory regressions
+* Fixed memory leak introduced in 1.8.0
+
 1.8.0
 
 * Enumerators!
