@@ -91,6 +91,35 @@ suite.addBatch({
 });
 
 suite.addBatch({
+    'Error within a nested asyncblock': {
+        topic: function(){
+            var self = this;
+
+            var testFunc = function(callback){
+                asyncblock(function(flow){
+                    return callback(new Error('from testFunc'));
+                });
+            };
+
+            asyncblock(function(flow){
+                flow.errorCallback = self.callback;
+
+                testFunc(flow.add());
+                flow.wait();
+
+                throw new Error("This line shouldn't execute");
+            });
+            var x = 5;
+        },
+
+        'Error is trapped': function(err, result){
+            assert.instanceOf(err, Error);
+            assert.equal(err.message, 'from testFunc');
+        }
+    }
+});
+
+suite.addBatch({
     'Error after async call': {
         topic: function(){
             var self = this;
