@@ -109,7 +109,6 @@ suite.addBatch({
 
                 throw new Error("This line shouldn't execute");
             });
-            var x = 5;
         },
 
         'Error is trapped': function(err, result){

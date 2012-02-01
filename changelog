@@ -1,3 +1,7 @@
+1.9.2
+
+* Fix an issue with the first task added without a key not reporting its error correctly
+
 1.9.1
 
 * Fix a bug with an error not getting handled properly if it was returned to a callback within a nested asyncblock before the inner asyncblock waited on an async call
