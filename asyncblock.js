@@ -8,3 +8,4 @@ require('./lib/func.js');
 require('./lib/future.js');
 require('./lib/wrap.js');
 require('./lib/queue.js');
+require('./lib/transform.js');

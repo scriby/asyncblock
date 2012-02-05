@@ -12,7 +12,9 @@
 		"url": "git://github.com/scriby/asyncblock.git"
 	},
 	"dependencies": {
-		"fibers": "0.6.4"
+		"fibers": "0.6.4",
+        "uglify-js": "1.2.5",
+        "traverse": "0.5.2"
 	},
     "devDependencies": {
         "vows": "0.6.0"
