@@ -1,4 +1,4 @@
-var vows = require('vows');
+/*var vows = require('vows');
 var assert = require('assert');
 
 var asyncblock = require('asyncblock');
@@ -47,7 +47,7 @@ suite.addBatch({
         }
     },
 
-/*    'defer5': {
+    'defer5': {
         topic: function(){
             require('../test_data/transform/defer.js').test5(this.callback);
         },
@@ -55,7 +55,7 @@ suite.addBatch({
         'Correct result': function(result){
             assert.equal(result, 'test');
         }
-    }*/
+    }
 });
 
-suite.export(module);
+suite.export(module);*/

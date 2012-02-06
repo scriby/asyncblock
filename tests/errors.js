@@ -292,4 +292,114 @@ suite.addBatch({
     }
 });
 
+suite.addBatch({
+    'When throwing a string': {
+        topic: function() {
+            var self = this;
+            asyncblock(function(flow) {
+                flow.errorCallback = self.callback;
+                throw 'ERROR';
+            });
+        },
+
+        'the string bubbles up through the callback': function(err, result) {
+            assert.equal(err, 'ERROR');
+            assert.equal(result, null);
+        }
+    },
+
+    'When throwing an Error': {
+        topic: function() {
+            var self = this;
+            asyncblock(function(flow) {
+                flow.errorCallback = self.callback;
+                throw new Error('ERROR');
+            });
+        },
+
+        'the Error bubbles up through the callback': function(err, result) {
+            assert.instanceOf(err, Error);
+            assert.equal(err.message, 'ERROR');
+            assert.equal(result, null);
+        }
+    },
+
+    'When throwing a string in an inner async block': {
+        topic: function() {
+            var self = this;
+
+            var throwError = function(callback) {
+                asyncblock(function(flow) {
+                    flow.errorCallback = callback;
+                    throw 'ERROR';
+                })
+            };
+
+            asyncblock(function(flow) {
+                flow.errorCallback = self.callback;
+                throwError(flow.add());
+                flow.wait();
+            });
+        },
+
+        'the string bubbles up through the callback as an Error': function(err, result) {
+            assert.instanceOf(err, Error);
+            assert.equal(err.message, 'ERROR');
+            assert.equal(result, null);
+        }
+    },
+
+    'When throwing an Error in an inner async block, with nextTick': {
+        topic: function() {
+            var self = this;
+
+            var throwError = function(callback) {
+                process.nextTick(function(){
+                    asyncblock(function(flow) {
+                        flow.errorCallback = callback;
+                        throw new Error('ERROR');
+                    })
+                });
+            };
+
+            asyncblock(function(flow) {
+                flow.errorCallback = self.callback;
+                throwError(flow.add());
+                flow.wait();
+            });
+        },
+
+        'the Error bubbles up through the callback': function(err, result) {
+            assert.instanceOf(err, Error);
+            assert.equal(err.message, 'ERROR');
+            assert.equal(result, null);
+        }
+    },
+
+    'When throwing an Error in an inner async block': {
+        topic: function() {
+            var self = this;
+
+            var throwError = function(callback) {
+                asyncblock(function(flow) {
+                    flow.errorCallback = callback;
+                    throw new Error('ERROR');
+                })
+            };
+
+            asyncblock(function(flow) {
+                flow.errorCallback = self.callback;
+                throwError(flow.add());
+                flow.wait();
+            });
+        },
+
+        'the Error bubbles up through the callback': function(err, result) {
+            assert.instanceOf(err, Error);
+            assert.equal(err.message, 'ERROR');
+            assert.equal(result, null);
+        }
+    }
+});
+
 suite.export(module);

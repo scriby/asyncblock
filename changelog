@@ -1,3 +1,7 @@
+1.9.3
+
+* Fixing a bug similar to the one fixed for 1.9.1, except when an actual Error is returned instead of a string
+
 1.9.2
 
 * Fix an issue with the first task added without a key not reporting its error correctly
