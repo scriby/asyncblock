@@ -60,7 +60,7 @@ suite.addBatch({
 
         'The taskTimeout event is emitted': function(result){
             assert.equal(result.key, 'key');
-            assert.greater(result.runtime, 98);
+            assert.greater(result.runtime, 97);
         }
     },
 
