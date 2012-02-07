@@ -1,3 +1,7 @@
+1.9.4
+
+* Beta release of source transformation of asyncFunction.sync, asyncFunction.future, asyncFunction.defer
+
 1.9.3
 
 * Fixing a bug similar to the one fixed for 1.9.1, except when an actual Error is returned instead of a string

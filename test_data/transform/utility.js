@@ -3,3 +3,7 @@ exports.echo = function(message, callback){
         callback(null, message);
     });
 };
+
+exports.echoImmed = function(message, callback){
+    callback(null, message);
+};

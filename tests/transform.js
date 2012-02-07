@@ -1,15 +1,19 @@
-/*var vows = require('vows');
+var vows = require('vows');
 var assert = require('assert');
 
 var asyncblock = require('asyncblock');
 asyncblock.enableTransform();
 
+Error.stackTraceLimit = 100;
+
 var suite = vows.describe('transform');
+var defer = require('../test_data/transform/defer.js');
+var sync = require('../test_data/transform/sync.js');
 
 suite.addBatch({
     'defer1': {
         topic: function(){
-            require('../test_data/transform/defer.js').test1(this.callback);
+            defer.test1(this.callback);
         },
 
         'Correct result': function(result){
@@ -19,7 +23,7 @@ suite.addBatch({
 
     'defer2': {
         topic: function(){
-            require('../test_data/transform/defer.js').test2(this.callback);
+            defer.test2(this.callback);
         },
 
         'Correct result': function(result){
@@ -29,7 +33,7 @@ suite.addBatch({
 
     'defer3': {
         topic: function(){
-            require('../test_data/transform/defer.js').test3(this.callback);
+            defer.test3(this.callback);
         },
 
         'Correct result': function(result){
@@ -39,7 +43,7 @@ suite.addBatch({
 
     'defer4': {
         topic: function(){
-            require('../test_data/transform/defer.js').test4(this.callback);
+            defer.test4(this.callback);
         },
 
         'Correct result': function(result){
@@ -49,7 +53,27 @@ suite.addBatch({
 
     'defer5': {
         topic: function(){
-            require('../test_data/transform/defer.js').test5(this.callback);
+            defer.test5(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'defer6': {
+        topic: function(){
+            defer.test6(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'defer7': {
+        topic: function(){
+            defer.test7(this.callback);
         },
 
         'Correct result': function(result){
@@ -58,4 +82,66 @@ suite.addBatch({
     }
 });
 
-suite.export(module);*/
+suite.addBatch({
+    'sync1': {
+        topic: function(){
+            sync.test1(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'sync2': {
+        topic: function(){
+            sync.test2(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'sync3': {
+        topic: function(){
+            sync.test3(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'sync4': {
+        topic: function(){
+            sync.test4(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'sync5': {
+        topic: function(){
+            sync.test5(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'sync6': {
+        topic: function(){
+            sync.test6(this.callback);
+        },
+
+        'Correct result': function(result){
+            assert.equal(result, 'test');
+        }
+    }
+});
+
+suite.export(module);
