@@ -1,3 +1,7 @@
+1.9.5
+
+* Improved parser for source transformation and some performance improvement (more to come)
+
 1.9.4
 
 * Beta release of source transformation of asyncFunction.sync, asyncFunction.future, asyncFunction.defer
