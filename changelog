@@ -1,3 +1,7 @@
+1.9.6
+
+* Over 2x performance improvement when walking AST during source transformation
+
 1.9.5
 
 * Improved parser for source transformation and some performance improvement (more to come)
