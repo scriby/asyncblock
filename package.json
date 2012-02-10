@@ -1,6 +1,6 @@
 {
 	"name": "asyncblock",
-	"version": "1.9.7-2",
+	"version": "1.9.7-3",
 	"description": "A simple and powerful abstraction of node-fibers",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],
@@ -13,7 +13,7 @@
 	},
 	"dependencies": {
 		"fibers": "0.6.4",
-        "uglify-js_scriby": "https://github.com/scriby/UglifyJS/tarball/1.2.5-2"
+        "uglify-js_scriby": "https://github.com/scriby/UglifyJS/tarball/1.2.5-3"
 	},
     "devDependencies": {
         "vows": "0.6.0"
