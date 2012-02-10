@@ -3,7 +3,7 @@ var utility = require('./utility.js');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echo.sync('test');
+        var result = utility.echo('test').sync();
 
         callback(null, result);
     });
@@ -12,7 +12,7 @@ exports.test1 = function(callback){
 exports.test2 = function(callback){
     asyncblock(function(flow){
         var result;
-        result = utility.echo.sync('test');
+        result = utility.echo('test').sync();
 
         callback(null, result);
     });
@@ -21,7 +21,7 @@ exports.test2 = function(callback){
 exports.test3 = function(callback){
     asyncblock(function(flow){
         var result;
-        result = utility.echo.sync('asdf');
+        result = utility.echo('asdf').sync();
 
         result = 'test';
 
@@ -31,7 +31,7 @@ exports.test3 = function(callback){
 
 exports.test4 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echo.sync('test');
+        var result = utility.echo('test').sync();
 
         var test = function(result){
             return result;
@@ -46,7 +46,7 @@ exports.test5 = function(callback){
         var result;
 
         var test = function(){
-            result = utility.echo.sync('test');
+            result = utility.echo('test').sync();
         };
 
         test();
@@ -57,7 +57,7 @@ exports.test5 = function(callback){
 
 exports.test6 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echoImmed.sync('test');
+        var result = utility.echoImmed('test').sync();
 
         callback(null, result);
     });

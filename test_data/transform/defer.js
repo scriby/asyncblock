@@ -3,7 +3,7 @@ var utility = require('./utility.js');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echo.defer('test');
+        var result = utility.echo('test').defer();
 
         callback(null, result);
     });
@@ -12,7 +12,7 @@ exports.test1 = function(callback){
 exports.test2 = function(callback){
     asyncblock(function(flow){
         var result;
-        result = utility.echo.defer('test');
+        result = utility.echo('test').defer();
 
         callback(null, result);
     });
@@ -21,7 +21,7 @@ exports.test2 = function(callback){
 exports.test3 = function(callback){
     asyncblock(function(flow){
         var result;
-        result = utility.echo.defer('asdf');
+        result = utility.echo('asdf').defer();
 
         result = 'test';
 
@@ -31,7 +31,7 @@ exports.test3 = function(callback){
 
 exports.test4 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echo.defer('test');
+        var result = utility.echo('test').defer();
 
         var test = function(result){
             return result;
@@ -46,7 +46,7 @@ exports.test5 = function(callback){
         var result;
 
         var test = function(){
-            result = utility.echo.defer('test');
+            result = utility.echo('test').defer();
         };
 
         test();
@@ -57,7 +57,7 @@ exports.test5 = function(callback){
 
 exports.test6 = function(callback){
     asyncblock(function(flow){
-        var result = utility.echoImmed.defer('test');
+        var result = utility.echoImmed('test').defer();
 
         callback(null, result);
     });
@@ -66,7 +66,7 @@ exports.test6 = function(callback){
 exports.test7 = function(callback){
     asyncblock(function(flow){
         var test = function(){
-            return utility.echo.defer('test');
+            return utility.echo('test').defer();
         };
 
         callback(null, test());
