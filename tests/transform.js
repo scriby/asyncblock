@@ -9,136 +9,41 @@ Error.stackTraceLimit = 100;
 var suite = vows.describe('transform');
 var defer = require('../test_data/transform/defer.js');
 var sync = require('../test_data/transform/sync.js');
+var future = require('../test_data/transform/future.js');
+var parse = require('../test_data/transform/parse.js');
 
-suite.addBatch({
-    'defer1': {
-        topic: function(){
-            defer.test1(this.callback);
-        },
+var makeTests = function(file, name, count){
+    var tests = {};
 
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
+    for(var i = 1; i <= count; i++){
+        (function(i){
+            tests[name + i] = {
+                topic: function(){
+                    file['test' + i](this.callback);
+                },
 
-    'defer2': {
-        topic: function(){
-            defer.test2(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'defer3': {
-        topic: function(){
-            defer.test3(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'defer4': {
-        topic: function(){
-            defer.test4(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'defer5': {
-        topic: function(){
-            defer.test5(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'defer6': {
-        topic: function(){
-            defer.test6(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'defer7': {
-        topic: function(){
-            defer.test7(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
+                'Correct result': function(result){
+                    assert.equal(result, 'test');
+                }
+            };
+        })(i);
     }
-});
+
+    return tests;
+};
+
+suite.addBatch(makeTests(defer, 'defer', 7));
+suite.addBatch(makeTests(sync, 'sync', 6));
+suite.addBatch(makeTests(future, 'future', 7));
 
 suite.addBatch({
-    'sync1': {
+    'Parser maintains line numbers correctly': {
         topic: function(){
-            sync.test1(this.callback);
+            parse.test(this.callback);
         },
 
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'sync2': {
-        topic: function(){
-            sync.test2(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'sync3': {
-        topic: function(){
-            sync.test3(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'sync4': {
-        topic: function(){
-            sync.test4(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'sync5': {
-        topic: function(){
-            sync.test5(this.callback);
-        },
-
-        'Correct result': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
-    'sync6': {
-        topic: function(){
-            sync.test6(this.callback);
-        },
-
-        'Correct result': function(result){
+        'Line numbers correct': function(result){
+            assert.isTrue(parse.lineCountMaintained);
             assert.equal(result, 'test');
         }
     }
