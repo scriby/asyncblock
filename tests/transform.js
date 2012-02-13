@@ -11,6 +11,7 @@ var defer = require('../test_data/transform/defer.js');
 var sync = require('../test_data/transform/sync.js');
 var future = require('../test_data/transform/future.js');
 var parse = require('../test_data/transform/parse.js');
+var no_transform = require('../test_data/transform/no_transform.js');
 
 var makeTests = function(file, name, count){
     var tests = {};
@@ -32,7 +33,7 @@ var makeTests = function(file, name, count){
     return tests;
 };
 
-suite.addBatch(makeTests(defer, 'defer', 7));
+suite.addBatch(makeTests(defer, 'defer', 8));
 suite.addBatch(makeTests(sync, 'sync', 6));
 suite.addBatch(makeTests(future, 'future', 7));
 
@@ -45,6 +46,18 @@ suite.addBatch({
         'Line numbers correct': function(result){
             assert.isTrue(parse.lineCountMaintained);
             assert.equal(result, 'test');
+        }
+    }
+});
+
+suite.addBatch({
+    'Transformer ignores files it does not need to change': {
+        topic: function(){
+            this.callback(null, no_transform);
+        },
+
+        'Not transformed': function(no_transform){
+            assert.isFalse(!!no_transform.transformed);
         }
     }
 });

@@ -64,11 +64,39 @@ exports.test6 = function(callback){
 };
 
 exports.test7 = function(callback){
-    asyncblock(function(flow){
+    asyncblock(function(){
         var test = function(){
             return utility.echo('test').defer();
         };
 
         callback(null, test());
+    });
+};
+
+exports.test8 = function(callback){
+    asyncblock(function(){
+        var test = function(callback){
+            asyncblock(function(flow){
+                var result = utility.echo('test').sync();
+                callback(null, result);
+            });
+        };
+
+        var result = test().sync();
+
+        callback(null, result);
+    });
+};
+
+exports.test8 = function(callback){
+    asyncblock(function(){
+        var test = function(callback){
+            var result = utility.echo('test').sync();
+            callback(null, result);
+        };
+
+        var result = test().sync();
+
+        callback(null, result);
     });
 };

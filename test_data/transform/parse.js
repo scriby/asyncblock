@@ -1,4 +1,5 @@
 var asyncblock = require('asyncblock');
+var utility = require('./utility.js');
 
 var x = function(){ return { x: function() {} } };
 
@@ -182,11 +183,9 @@ exports.test = function(callback){
 
         } //test
         else{ //test1
-
         }
-        x().defer();
 
-        callback(null, 'test');
+        callback(null, utility.echo('test').defer());
 
         return
     });

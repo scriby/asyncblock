@@ -286,7 +286,7 @@ suite.addBatch({
         },
 
         'The correct errors occurred': function(errors){
-            assert.instanceOf(errors.first, Error);
+            assert.isUndefined(errors.first); //The behavior of this has changed such that sync can be used in this fashion
             assert.instanceOf(errors.second, Error);
         }
     }
