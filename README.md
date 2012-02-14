@@ -79,7 +79,7 @@ asyncblock(function(flow) {
     fs.readFile(path2, 'utf8', flow.set('contents2'));
     
     //Print the concatenation of the results when both reads are finished
-    console.log(flow.get('contents1') + flow.get('contents'));
+    console.log(flow.get('contents1') + flow.get('contents2'));
     
     //Wait for a large number of tasks
     for(var i = 0; i < 100; i++){
