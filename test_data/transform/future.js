@@ -57,9 +57,9 @@ exports.test5 = function(callback){
 
 exports.test6 = function(callback){
     asyncblock(function(flow){
-        var future = utility.echoImmed('test').future();
+        var future = utility.echoImmed('test').future(['message']);
 
-        callback(null, future.result);
+        callback(null, future.result.message);
     });
 };
 

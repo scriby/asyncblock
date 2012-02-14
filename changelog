@@ -1,3 +1,11 @@
+2.0.0
+
+* Source transformation functions asyncFunction.sync, asyncFunction.future, and asyncFunction.defer released
+* Deprecated flow.func & asyncblock.wrap in lieu of source transformation being a better solution
+* You can now pass the same args to sync, future, & defer as you can to flow.add
+* Added benchmark for source transformation
+* Updated documentation
+
 1.9.6
 
 * Over 2x performance improvement when walking AST during source transformation

@@ -38,43 +38,96 @@ Note that you may call flow.get(key) multiple times with the same key and it wil
 Used to clear out stored results when using flow.set & flow.get. Not usually necessary, but provided for rare circumstances where
 the garbage collector needs to collect results before the asyncblock ends.
 
-### flow.func(toExecute)
+### anyAsyncMethod().sync([options], [responseFormat]);
 
-Flow.func sets up a chained syntax which can be used to build a synchronous call in one line. The argument passed to flow.func is a function to execute, or a string representing a function name (in the case "self" is specified). The chain has the following functions available:
+A call to sync() may be chained on the end of any async call to convert to a synchronous style call. The fiber (thread) will pause here, but the event loop will not be blocked.
+When the asyc operation completes, execution will resume from where it left off.
 
-* self(thisObject) - Set the "this" context for the function being called
-* options(objectBag) - Pass an options object bag, similar to when calling flow.add
-* sync(args) - Executes the function immediately and returns the result. The fiber yields until the result is ready.
-* future(args) - Returns a future which may be used to obtain the result of the function at some point in the future.
-* queue(args) - Runs the task from the fiber as soon as possible. Get the result by making a call to flow.wait(key). If only one task has been queued (or added with flow.add()) with no key, you can get the result by calling flow.wait with no key.
-* (arguments) - You may execute the result of flow.func (which is a function) at any time. You can also pass in the args here for simplicity.
+Options and responseFormat are the same as for the add call.
 
-Examples:
+Source transform must be enabled to use this syntax. Call asyncblock.enableTransform() once in the application before requiring modules that use this syntax.
 
 ```javascript
-asyncblock(function(flow){
-    //Read the current file and store the results into contents (flow.func's simplest form)
-    var contents = flow.func(fs.readFile)(__filename, 'utf8');
+asyncblock(function(){
+    if(fs.stat(path).sync().isFile()){
+        var contents = fs.readFile(path, 'utf8').sync();
 
-    //This is equivalent to the above example
-    var contents = flow.func(fs.readFile).sync(__filename, 'utf8');
-
-    //The following examples are all equivalent and show how to maintain the "this" context if necessary
-    var custom1 = flow.func(obj.customAsyncMethod).call(obj, 'test');
-    var custom2 = flow.func(obj.customAsyncMethod).apply(obj, ['test']);
-    var custom4 = flow.func(obj.customAsyncMethod).self(obj)('test');
-    var custom5 = flow.func('customAsyncMethod').self(obj).sync('test');
-
-    //Read two files in parallel, then print the contents using queue
-    flow.func(fs.readFile).args(path1, 'utf8').key('contents1').queue();
-    flow.func(fs.readFile).args(path2, 'utf8').key('contents2').queue();
-    console.log(flow.wait('contents1') + flow.wait('contents2'));
-
-    //Read two files in parallel, then print the contents using futures
-    var future1 = flow.func(fs.readFile).future(path1, 'utf8');
-    var future2 = flow.func(fs.readFile).future(path2, 'utf8');
-    console.log(future1.result + future2.result);
+        console.log(contents);
+    }
 });
+```
+
+### anyAsyncMethod().defer([options], [responseFormat]);
+
+Defer is similar to sync, except the fiber pauses to obtain the result on the first usage of the variable, not when the async call is made.
+The result of defer should be written directly into a variable, which was either just created, or has been declared but not yet assigned.
+If using defer and not storing the result into a variable, it will be converted to a sync call instead.
+Examples of this include returning the value directly, storing the value into an array or object property (x.y), etc.
+
+Options and responseFormat are the same as for the add call.
+
+Source transform must be enabled to use this syntax. Call asyncblock.enableTransform() once in the application before requiring modules that use this syntax.
+
+```javascript
+asyncblock(function(){
+
+    var contents1 = fs.readFile(path1, 'utf8').defer();
+    var contents2 = fs.readFile(path2, 'utf8').defer();
+    var contents3 = fs.readFile(path3, 'utf8').defer();
+
+    if(contents1 === 'some text'){ //Wait for contents1 read to finish here
+        console.log(contents3); //Wait for contents3 read to finish here
+    } else if(contents2 === 'some other text'){ //Wait for contents2 read to finish here
+        console.log(contents2);
+    } else {
+        contents.log(contents3); //Wait for contents3 read to finish here
+    }
+});
+```
+
+### anyAsyncMethod().future([options], [responseFormat]);
+
+Future is similar to defer, but instead of "returning" the result directly, a future is returned. You may call .result on the future to obtain the result at any point
+within the asyncblock (fiber). The main use case for using future over defer would be storing a number of tasks in an array or object such that they run in parallel.
+
+Options and responseFormat are the same as for the add call.
+
+Source transform must be enabled to use this syntax. Call asyncblock.enableTransform() once in the application before requiring modules that use this syntax.
+
+```javascript
+asyncblock(function(){
+    var results = [];
+
+    //Start x reads in parallel
+    for(var i = 0; i < x; i++){
+        results.push(fs.readFile(paths[x], 'utf8').future());
+    }
+
+    //Log all their contents
+    for(i = 0; i < results.length; i++){
+        console.log(results[i].result);
+    }
+});
+```
+
+### asyncblock.enableTransform([module])
+
+Enables source transformation using asyncblock. If a module is passed (typically using the module keyword), it will be reloaded by asyncblock with source transformations made.
+After calling enableTransform, any modules required throughout the life of the application will have source transformations applied.
+
+```javascript
+var asyncblock = require('asyncblock');
+
+asyncblock.enableTransform();
+
+require('...');
+```
+
+```javascript
+var asyncblock = require('asyncblock');
+
+//Use this line at the top of standalone scripts to re-load the current module with source transformations applied
+if(asyncblock.enableTransform(module)) { return; }
 ```
 
 ### flow.sync([options], toExecute, [extra args])
@@ -150,7 +203,7 @@ Pass the entire result of an async task execution to flow.future to create a fut
 
 ```javascript
 asyncblock(function(flow){
-    var future = flow.future(fs.readFile(path, 'utf8', flow.callback())); //flow.add can be used in place of flow.callback
+    var future = flow.future( fs.readFile(path, 'utf8', flow.callback()) ); //flow.add can be used in place of flow.callback
     var contents = future.result;
 });
 ```
@@ -206,38 +259,6 @@ asyncblock.nostack(function(flow){
     //If errors occur in here, they will get less detail added to their stack trace
 });
 ```
-
-### asyncblock.wrap(module)
-
-Use asyncblock.wrap to create a synchronous wrapper for an existing async module.
-
-```javascript
-var asyncblock = require('asyncblock');
-var fs = asyncblock.wrap(fs);
-
-asyncblock(function(flow){
-    var fileContents = fs.sync.readFile(path, 'utf8'); //Call the function like normal, but leave off the callback, and preface it with .sync
-    console.log(fileContents); //Print the contents
-
-    fs.readFile(path, 'utf8', flow.add('contents')); //You still have access to the original methods
-    console.log(flow.wait('contents'));
-
-    var future1 = fs.future.readFile(path1, 'utf8'); //Futures can be used to get parallel execution
-    var future2 = fs.future.readFile(path2, 'utf8');
-
-    console.log(future1.result + future2.result); //Print the contents of both files
-
-    //You can pass options like this. All the options available when calling add are available here as well.
-    //Options set on flow, like maxParallel, also take effect
-    var contents = fs.syncOptions({ timeout: 1000 }).readFile(path, 'utf8');
-    console.log(contents);
-
-    var future = fs.futureOptions({ timeout: 1000}).readFile(path, 'utf8');
-    console.log(future.result);
-});
-```
-
-Warning: Don't attempt to call functions that aren't written in async style with this method, as it won't work and may result in a memory leak.
 
 ### asyncblock.enumerator(function)
 

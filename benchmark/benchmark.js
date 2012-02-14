@@ -196,29 +196,6 @@ suite.addBatch({
 });
 
 suite.addBatch({
-    'When doing 100,000 echos with flow.func in series': {
-        topic: function(){
-            var self = this;
-            var start = new Date();
-
-            asyncblock(function(flow){
-                for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    flow.func(echo)(i);
-                }
-
-                self.callback(null, new Date() - start);
-            });
-        },
-
-        'It takes': function(time){
-            printStatus('When doing 100,000 echos with flow.func in series', time);
-
-            assertMetrics(time);
-        }
-    }
-});
-
-suite.addBatch({
     'When doing 100,000 echos with flow.sync(1) in series': {
         topic: function(){
             var self = this;
@@ -314,57 +291,22 @@ suite.addBatch({
 });
 
 suite.addBatch({
-    'When doing 100,000 asyncblock.wraps': {
+    'When doing 1,000 source transforms': {
         topic: function(){
-            var self = this;
             var start = new Date();
+            var filename = __dirname + '/transform_test_file.js';
+            asyncblock.enableTransform();
 
-            asyncblock(function(flow){
-                for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    var obj = {
-                        testFunc: function(callback){
-                            callback();
-                        }
-                    };
+            for(var i = 0; i < 1000; i++){
+                require(filename);
+                delete require.cache[filename];
+            }
 
-                    asyncblock.wrap(obj);
-                }
-
-                self.callback(null, new Date() - start);
-            });
+            this.callback(null, new Date() - start);
         },
 
         'It takes': function(time){
-            printStatus('When doing 100,000 asyncblock.wraps', time);
-
-            assertMetrics(time);
-        }
-    }
-});
-
-suite.addBatch({
-    'When doing 100,000 asyncblock.wrap sync calls': {
-        topic: function(){
-            var self = this;
-            var start = new Date();
-
-            var obj = asyncblock.wrap({
-                echo: function(message, callback){
-                    echo(message, callback);
-                }
-            });
-
-            asyncblock(function(flow){
-                for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    obj.sync.echo(i);
-                }
-
-                self.callback(null, new Date() - start);
-            });
-        },
-
-        'It takes': function(time){
-            printStatus('When doing 100,000 asyncblock.wrap sync calls', time);
+            printStatus('When doing 1,000 source transforms', time);
 
             assertMetrics(time);
         }

@@ -1,5 +1,4 @@
 var asyncblock = require('asyncblock');
-var utility = require('./utility.js');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){

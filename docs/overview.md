@@ -109,6 +109,52 @@ asyncblock(function(flow){
 * May require additional variables to be declared (if moving the result of flow.wait into a variable)
 * "One-liner" syntax is a little more verbose than other techniques
 
+## x.sync(), x.defer(), x.future() (Source transformation)
+
+You can chain sync, defer, or future on the end of any async function call. Sync waits for the call to finish before continuing.
+Defer waits for the call to complete on the first access to the variable the result is stored into.
+Future returns a future which you can read the .result property of to obtain the result.
+
+Before the above syntax can be used, you must call asyncblock.enableTransform(). That will insert a transformation step in the module loading process,
+so any modules loaded from then on may use the syntax.
+
+Simple example:
+
+```javascript
+var asyncblock = require('asyncblock');
+
+//If the enableTransform method is called like this, it can be used to transform the current module if it was loaded standalone
+//This effectively "returns" from the original loading of this module, then asyncblock loads and runs the transformed version
+//If you just want to enable the syntax transform on all modules loaded from this point on, just call asyncblock.enableTransform()
+if(asyncblock.enableTransform(module)){ return; }
+
+asyncblock(function(){
+    //Wait for the read to finish before proceeding
+    var contents = fs.readFile(path, 'utf8').sync();
+
+    //Yield on the first access to the contents1 variable
+    var contents1 = fs.readFile(path1, 'utf8').defer();
+
+    //Set a future to contents2
+    var contents2 = fs.readFile(path2, 'utf8').future();
+
+    //Wait for the file to finish writing before proceeding
+    fs.writeFile(contents + contents1 + contents2.result).sync();
+});
+```
+
+### Pros
+
+* The most clean and succinct syntax that asyncblock offers for cases when obtaining results from the async call
+* Supports series and parallel operations
+* Maintains the "this" context when calling the async function
+* Source transformation will allow asyncblock to target harmony generators when avaiable in V8, further increasing performance and removing risk associated with fibers
+
+### Cons
+
+* When writing standalone scripts, you have to remember to enable the transform (like the example above)
+* Adds some overhead to the module require process (I've profiled the code and made optimizations to keep the overhead minimal)
+
 ## flow.future
 
 Creates a future which can be used to get the result of an asynchronous function. When .result is accessed, the current fiber will
@@ -136,76 +182,6 @@ asyncblock(function(flow){
 
 * Same cons as flow.get / flow.set
 * Syntax a little more verbose than flow.get / flow.set
-
-## flow.func
-
-Flow.func takes a different approach than get / set and add / wait. Instead of passing something special in as the callback,
-flow.func wraps the async function, providing a synchronous "membrane". Flow.func can execute in series, queue tasks,
-or return futures. Check the API documentation for more information.
-
-Simple example:
-
-```javascript
-asyncblock(function(flow){
-    //Read a file "synchronously"
-    var contents = flow.func(fs.readFile)(path, 'utf8');
-
-    //Read two files in parallel
-    var future1 = flow.func(fs.readFile).future(path1, 'utf8');
-    var future2 = flow.func(fs.readFile).future(path2, 'utf8');
-
-    //Get the contents of each
-    var contents1 = future1.result;
-    var contents2 = future2.result;
-});
-```
-
-### Pros
-
-* Synchronous operations can be written in one line
-* Some may like futures based on personal preference
-
-### Cons
-
-* The "this" context is lost when calling the function (see API docs for how to specify it)
-* The syntax is not familiar
-
-## asyncblock.wrap
-
-Wrap creates a synchronous version of an asynchronous object or module which can be used within an asyncblock. This is
-a good option when calling methods on commonly used objects. You may even choose to expose / use a wrapped version of
-an object in place of the original object.
-
-Simple example:
-
-```javascript
-//Wrap the fs module
-var fs = asyncblock.wrap(require('fs'));
-
-asyncblock(function(flow){
-    //Read two files in parallel
-    var future1 = fs.future.readFile(path1, 'utf8');
-    var future2 = fs.future.readFile(path2, 'utf8');
-
-    //Write a file (and wait for it to finish), containing the combined contents
-    fs.sync.writeFile(path, future1.result + future2.result);
-
-    //Read the contents of a single file into a variable
-    var contents = fs.sync.readFile(path, 'utf8');
-});
-```
-
-### Pros
-
-* Syntax is very concise, and reasonably straightforward
-* Synchronous operations can be written in one line
-* The "this" context is maintained in the call
-* All the original functions and variables are still available and can be used like normal
-
-### Cons
-
-* The object must be wrapped before its usable in this form
-* Not easy to use on a function which isn't part of an object already
 
 ## flow.sync
 

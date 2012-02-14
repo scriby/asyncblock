@@ -46,12 +46,12 @@ exports.test5 = function(callback){
         var result;
 
         var test = function(){
-            result = utility.echo('test').sync();
+            result = utility.echo('test').sync(['message']);
         };
 
         test();
 
-        callback(null, result);
+        callback(null, result.message);
     });
 };
 
