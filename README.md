@@ -36,10 +36,6 @@ See [node-fibers](https://github.com/laverdet/node-fibers) for more information,
 Check out the [overview](https://github.com/scriby/asyncblock/blob/master/docs/overview.md) to get an at-a-glance overview
 of the different ways asyncblock can be used.
 
-## Installation
-
-`npm install asyncblock` and you're done
-
 ## Examples
 
 A few quick examples to show off the functionality of asyncblock:
