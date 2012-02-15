@@ -17,7 +17,7 @@ A fully fledged flow control library built on top of fibers.
 npm install asyncblock
 ```
 
-See [node-fibers](https://github.com/laverdet/node-fibers) for more information, especially if you're running on node < v0.5.2.
+See [node-fibers](https://github.com/laverdet/node-fibers) for more information on fibers
 
 ### Why should I use asyncblock?
 
@@ -100,6 +100,9 @@ asyncblock(function(flow) {
 ### With source transformation
 
 ```javascript
+//asyncblock.enableTransform() must be called before requiring modules using this syntax.
+//See overview / API for more details
+
 asyncblock(function(flow) {
     //Start two parallel file reads
     var contents1 = fs.readFile(path1, 'utf8').defer();
