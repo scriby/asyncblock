@@ -1,3 +1,7 @@
+2.0.1
+
+* Fixing an issue with errors not getting thrown when waiting on a specific key
+
 2.0.0
 
 * Source transformation functions asyncFunction.sync, asyncFunction.future, and asyncFunction.defer released

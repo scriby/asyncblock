@@ -62,3 +62,27 @@ exports.test6 = function(callback){
         callback(null, result);
     });
 };
+
+exports.test7 = function(callback){
+    asyncblock(function(flow){
+        flow.errorCallback = function(err){
+            callback(null, err.message);
+        };
+
+        var result = utility.error('test').sync();
+
+        callback(null, result);
+    });
+};
+
+exports.test8 = function(callback){
+    asyncblock(function(flow){
+        flow.errorCallback = function(err){
+            callback(null, err.message);
+        };
+
+        var result = utility.errorImmed('test').sync();
+
+        callback(null, result);
+    });
+};
