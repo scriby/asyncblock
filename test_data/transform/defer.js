@@ -100,3 +100,28 @@ exports.test9 = function(callback){
         callback(null, result);
     });
 };
+
+exports.test10 = function(callback){
+    asyncblock(function(){
+        var result;
+
+        result = utility.echo('test').defer();
+
+        (function(result){
+            result = 5;
+        })();
+
+        callback(null, result);
+    });
+};
+
+exports.test11 = function(callback){
+    asyncblock(function(){
+        var result;
+        result = 1;
+
+        result = utility.echo('test').defer();
+
+        callback(null, result);
+    });
+};
