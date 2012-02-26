@@ -145,10 +145,6 @@ var asyncTask = function(callback) {
 });
 ```
 
-```
-
-See the API docs for more information.
-
 ## API
 
 See [API documentation](https://github.com/scriby/asyncblock/blob/master/docs/api.md)
