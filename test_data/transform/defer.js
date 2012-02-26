@@ -82,16 +82,16 @@ exports.test8 = function(callback){
             });
         };
 
-        var result = test().sync();
+        var result = test().defer();
 
         callback(null, result);
     });
 };
 
-exports.test8 = function(callback){
+exports.test9 = function(callback){
     asyncblock(function(){
         var test = function(callback){
-            var result = utility.echo('test').sync().substring(0, 4);
+            var result = utility.echo('test').defer().substring(0, 4);
             callback(null, result);
         };
 
