@@ -1,3 +1,8 @@
+2.0.2
+
+* Source transformation takes 33% less time in benchmark
+* Fixed an issue with assigning to or using a deferred variable before it was assigned by the deferred statement
+
 2.0.1
 
 * Fixing an issue with errors not getting thrown when waiting on a specific key
