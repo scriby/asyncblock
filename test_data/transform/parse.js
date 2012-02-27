@@ -9,6 +9,11 @@ exports.content = module.__asyncblock_content;
 exports.test = function(callback){
     asyncblock(function(flow){
 
+        var i = { //a1
+            b: 3, //2
+            a: (2 - 1) //3
+        }; //4
+
         if(x //1
             && //2
             x && //3
