@@ -1,13 +1,23 @@
 var asyncblock = require('asyncblock');
 var utility = require('./utility.js');
 
-var x = function(){ return { x: function() {} } };
+var x = function(){ return { x: function() { } } };
 
 exports.lineCountMaintained = module.__asyncblock_lineCountMaintained;
 exports.content = module.__asyncblock_content;
 
 exports.test = function(callback){
     asyncblock(function(flow){
+
+        var a1 = utility.echo('test').defer();
+        var a2 = utility.echo('test').defer();
+        var a3 = utility.echo('test').defer();
+
+        var a4 = {
+            a1: a1,
+            a2: a2,
+            a3: a3
+        };
 
         var i = { //a1
             b: 3, //2

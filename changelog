@@ -1,3 +1,7 @@
+2.0.4
+
+* Correcting an issue with additional newlines getting added when a reference to a defer variable was the last in a block
+
 2.0.3
 
 * Updating uglify-js_scriby to 1.2.5-6 to correct an issue with newlines getting lost after certain expression types
