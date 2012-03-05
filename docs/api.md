@@ -7,6 +7,7 @@
     * timeout: Number of milliseconds to wait before aborting this task
     * timeoutIsError: If true (the default), a timeout is considered in error and will abort the current flow. If false, a timeout will not be treated as an error.
     * dontWait: If true, the result of this task will not be returned from flow.wait(). The result may only be obtained by passing a key to flow.wait.
+    * firstArgIsError: If false, the first argument passed to the callback is not treated as an error. Default is true. This may also be specified on the flow variable, in which case it applies to all added tasks.
 * key: Same as if specified in options
 * responseFormat: same as if specified in options
 

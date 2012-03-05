@@ -23,6 +23,16 @@ var immedMultiple = function(callback) {
     callback(null, 1, 2, 3);
 };
 
+var echoAsFirstArg = function(message, callback){
+    process.nextTick(function(){
+        callback(message);
+    });
+};
+
+var echoAsFirstArgSync = function(message, callback){
+    callback(message);
+};
+
 var delayed = function(callback){
     process.nextTick(
         function(){
@@ -974,6 +984,35 @@ suite.addBatch({
             assert.equal(result.second, 'second');
             assert.equal(result.third, 'third');
             assert.equal(result.fourth, 'fourth');
+        }
+    },
+
+    'When using firstArgIsError = false': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                var result = {};
+
+                echoAsFirstArg('first', flow.add( { firstArgIsError: false } ));
+                result.first = flow.wait();
+
+                flow.firstArgIsError = false;
+
+                echoAsFirstArgSync('second', flow.add());
+                result.second = flow.wait();
+
+                echoAsFirstArg('third', flow.add( { responseFormat: ['result'] } ));
+                result.third = flow.wait();
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.first, 'first');
+            assert.equal(result.second, 'second');
+            assert.equal(result.third.result, 'third');
         }
     }
 

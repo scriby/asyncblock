@@ -1,3 +1,7 @@
+2.0.5
+
+* Adding firstArgIsError option to allow not treating the first argument passed to the callback as an error
+
 2.0.4
 
 * Correcting an issue with additional newlines getting added when a reference to a defer variable was the last in a block
