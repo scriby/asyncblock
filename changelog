@@ -1,3 +1,7 @@
+2.0.6
+
+* Integrate JSHint and remove leaked global variables
+
 2.0.5
 
 * Adding firstArgIsError option to allow not treating the first argument passed to the callback as an error
