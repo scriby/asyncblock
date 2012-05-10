@@ -1,5 +1,3 @@
-require('fibers');
-
 module.exports = require('./lib/asyncblock.js');
 
 require('./lib/flow.js');

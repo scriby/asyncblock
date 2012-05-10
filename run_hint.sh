@@ -42,8 +42,7 @@ fs.readdir(codeDir, function(err, list){
        scripturl: true,
        latedef: false,
        loopfunc: true,
-       proto: true,
-       predef: { Fiber: true }
+       proto: true
    };
 
     asyncblock(function(flow){
