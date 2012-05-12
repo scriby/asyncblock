@@ -148,7 +148,7 @@ asyncblock(function(){
 * The most clean and succinct syntax that asyncblock offers for cases when obtaining results from the async call
 * Supports series and parallel operations
 * Maintains the "this" context when calling the async function
-* Source transformation will allow asyncblock to target harmony generators when avaiable in V8, further increasing performance and removing risk associated with fibers
+* Source transformation will allow asyncblock to target harmony generators when avaiable in V8, further increasing performance and removing the dependency on fibers
 
 ### Cons
 

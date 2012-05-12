@@ -268,6 +268,8 @@ Returns an Enumerator, which has the method moveNext and a getter named current.
 Enumerators may yield results asynchronously as long as the code calling the enumerator is also in an asyncblock. If the calling code is
 not in an asyncblock, the enumerator must return synchronously.
 
+**Warning** - If you create the enumerator and do not use it, a memory leak will occur. Make sure you call moveNext at least once, or enumerator.end().
+
 One of my favorite uses of this sort of thing is graph walking code. It allows you to separate the traversal logic from the
 business logic.
 

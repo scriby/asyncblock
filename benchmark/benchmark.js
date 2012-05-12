@@ -105,9 +105,7 @@ suite.addBatch({
 
                 });
 
-                while(enumerator.moveNext()){
-
-                }
+                enumerator.end();
             }
 
             this.callback(null, new Date() - start);
@@ -332,7 +330,11 @@ suite.addBatch({
                     var num = enumerator.current;
                 }
 
-                self.callback(null, new Date() - start);
+                var endTime = new Date() - start;
+                //Give the gc time to run
+                setTimeout(function(){
+                    self.callback(null, endTime);
+                }, 3000)
             });
         },
 
