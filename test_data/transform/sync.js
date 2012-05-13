@@ -1,5 +1,6 @@
 var asyncblock = require('asyncblock');
 var utility = require('./utility.js');
+var Fiber = require('fibers');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){
@@ -84,5 +85,67 @@ exports.test8 = function(callback){
         var result = utility.errorImmed('test').sync();
 
         callback(null, result);
+    });
+};
+
+//Verify nested syncs reuse the fiber
+exports.test9 = function(callback){
+    var inner = function(callback){
+        asyncblock(function(){
+            var innerFlow = Fiber.current;
+
+            process.nextTick(function(){
+                callback(null, innerFlow);
+            });
+        });
+    };
+
+    asyncblock(function(){
+        var flow = Fiber.current;
+        var innerFiber = inner().sync();
+
+        callback(null, flow === innerFiber ? 'test' : 'Fiber not reused');
+    });
+};
+
+//Verify fiber isn't reused for parallel operation
+exports.test10 = function(callback){
+    var inner = function(callback){
+        asyncblock(function(){
+            var innerFlow = Fiber.current;
+
+            process.nextTick(function(){
+                callback(null, innerFlow);
+            });
+        });
+    };
+
+    asyncblock(function(){
+        var flow = Fiber.current;
+        var innerFiber = inner().defer();
+
+        callback(null, flow !== innerFiber ? 'test' : 'Fiber reused');
+    });
+};
+
+//Verify fiber isn't reused for parallel operation
+exports.test10 = function(callback){
+    var inner = function(callback){
+        asyncblock(function(){
+            var innerFlow = Fiber.current;
+
+            process.nextTick(function(){
+                callback(null, innerFlow);
+            });
+        });
+    };
+
+    asyncblock(function(){
+        var flow = Fiber.current;
+        inner().sync();
+
+        var innerFiber = inner().defer();
+
+        callback(null, flow !== innerFiber ? 'test' : 'Fiber reused');
     });
 };
