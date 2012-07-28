@@ -125,3 +125,14 @@ exports.test11 = function(callback){
         callback(null, result);
     });
 };
+
+exports.test12 = function(callback){
+    asyncblock(function(){
+        var deferred = utility.echo('test').defer();
+
+        var hash = {};
+        hash.defer = deferred;
+
+        callback(null, hash.defer);
+    });
+};
