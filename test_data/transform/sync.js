@@ -1,4 +1,5 @@
-var asyncblock = require('asyncblock');
+var asyncblock;
+asyncblock = require('asyncblock'); //Test coffeescript style
 var utility = require('./utility.js');
 var Fiber = require('fibers');
 
