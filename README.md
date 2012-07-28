@@ -145,6 +145,19 @@ var asyncTask = function(callback) {
 });
 ```
 
+### Returning results
+
+```javascript
+var asyncTask = function(callback) {
+    asyncblock(function(flow) {
+        var contents = fs.readFile(path, 'utf8').sync(); //If readFile encountered an error, it would automatically get passed to the callback
+
+        return contents; //Return the value you want to be passed to the callback
+    }, callback); //The callback can be specified as the 2nd arg to asyncblock. It will be called with the value returned from the asyncblock as the 2nd arg.
+                  //If an error occurs, the callback will be called with the error as the first argument.
+});
+```
+
 ## API
 
 See [API documentation](https://github.com/scriby/asyncblock/blob/master/docs/api.md)
