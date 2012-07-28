@@ -1014,8 +1014,41 @@ suite.addBatch({
             assert.equal(result.second, 'second');
             assert.equal(result.third.result, 'third');
         }
-    }
+    },
 
+    'When using 2nd arg as callback': {
+        topic: function(){
+            asyncblock(
+                function(flow){
+                    echo('test', flow.add());
+
+                    return flow.wait();
+                },
+
+                this.callback
+            );
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result, 'test');
+        }
+    },
+
+    'When using 2nd arg as callback with error': {
+        topic: function(){
+            asyncblock(function(flow){
+                echo('test', flow.add());
+
+                throw new Error('Error');
+
+                return flow.wait();
+            }, this.callback);
+        },
+
+        'The results are as expected': function(err, result){
+            assert.equal(err.message, 'Error');
+        }
+    }
 });
 
 
