@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/scriby/asyncblock.png)](http://travis-ci.org/scriby/asyncblock)
 ```
                                         ______  ______              ______  
 ______ ______________  _________ __________  /_ ___  /______ __________  /__
