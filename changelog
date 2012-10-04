@@ -1,3 +1,31 @@
+2.1.6
+
+* Allow the current asyncblock's flow to be gotten from a function called from the current fiber.
+
+2.1.5
+
+* Allow asyncblock transform compilation to be kicked off independently. This allows a build process or otherwise to run the transformations beforehand.
+
+2.1.4
+
+* Fix an instance of errors getting swallowed within nested asyncblocks.
+
+2.1.3
+
+* Allow 2nd arg to be specified to an asyncblock, which acts as the return handler.
+
+2.1.2
+
+* Fix an issue with deferred variables not getting handled correctly if assigned to an object property
+
+2.1.1
+
+* Fix issue with asyncblock not working with Coffeescript
+
+2.1.0
+
+* Update to fibers v0.6.8 for node v0.8 support.
+
 2.0.9
 
 * x().sync() optimization - Reuse the fiber from the outer asyncblock in the inner asyncblock. Lower overhead and same behavior.

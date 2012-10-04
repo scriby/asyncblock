@@ -1048,6 +1048,25 @@ suite.addBatch({
         'The results are as expected': function(err, result){
             assert.equal(err.message, 'Error');
         }
+    },
+
+    'When using asyncblock.currentFlow': {
+        topic: function(){
+            var testCurrent = function(){
+                var flow = asyncblock.getCurrentFlow();
+
+                echo('test', flow.add());
+                return flow.wait();
+            };
+
+            asyncblock(function(){
+                return testCurrent();
+            }, this.callback);
+        },
+
+        'Ok': function(result){
+            assert.equal(result, 'test');
+        }
     }
 });
 
