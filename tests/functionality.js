@@ -1067,6 +1067,63 @@ suite.addBatch({
         'Ok': function(result){
             assert.equal(result, 'test');
         }
+    },
+
+    'When receiving an object as an error': {
+        topic: function(){
+            var x = function(callback){
+                asyncblock(function(flow){
+                    var x = flow.add();
+                    x({ msg: 'test' });
+                    flow.wait();
+                }, callback);
+            };
+
+            x(this.callback);
+        },
+
+        'The error is formed correctly': function(err, undefined){
+            assert.equal(err.message, JSON.stringify({ msg: 'test' }));
+            assert.equal(err.originalError.msg, 'test');
+        }
+    },
+
+    'When receiving a string as an error': {
+        topic: function(){
+            var x = function(callback){
+                asyncblock(function(flow){
+                    var x = flow.add();
+                    x('test');
+                    flow.wait();
+                }, callback);
+            };
+
+            x(this.callback);
+        },
+
+        'The error is formed correctly': function(err, undefined){
+            assert.equal(err.message, 'test');
+            assert.equal(err.originalError, 'test');
+        }
+    },
+
+    'When receiving an Error object as an error': {
+        topic: function(){
+            var x = function(callback){
+                asyncblock(function(flow){
+                    var x = flow.add();
+                    x(new Error('test'));
+                    flow.wait();
+                }, callback);
+            };
+
+            x(this.callback);
+        },
+
+        'The error is formed correctly': function(err, undefined){
+            assert.equal(err.message, 'test');
+            assert.equal(err.originalError.message, 'test');
+        }
     }
 });
 

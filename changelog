@@ -1,3 +1,7 @@
+2.1.7
+
+* Fixing an issue with information getting lost when passing an object as an error to a callback waited on by asyncblock.
+
 2.1.6
 
 * Allow the current asyncblock's flow to be gotten from a function called from the current fiber.
