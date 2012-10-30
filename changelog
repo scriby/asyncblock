@@ -1,3 +1,7 @@
+2.1.9
+
+* Fix an issue with asyncblock incorrectly reporting line counts as being off in files that have the transformation code commented out.
+
 2.1.8
 
 * Fix an issue with automatic transforms not working a small percentage of the time.
