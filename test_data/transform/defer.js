@@ -136,3 +136,13 @@ exports.test12 = function(callback){
         callback(null, hash.defer);
     });
 };
+
+exports.test13 = function(callback){
+    asyncblock(function(flow){
+        var deferred = utility.echo('test').defer();
+
+        flow.wait();
+
+        callback(null, deferred);
+    });
+};

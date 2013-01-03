@@ -1,3 +1,7 @@
+2.1.10
+
+* Fix a bug with flow.wait() interfering with defer()'d tasks
+
 2.1.9
 
 * Fix an issue with asyncblock incorrectly reporting line counts as being off in files that have the transformation code commented out.

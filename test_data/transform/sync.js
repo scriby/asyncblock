@@ -150,3 +150,13 @@ exports.test10 = function(callback){
         callback(null, flow !== innerFiber ? 'test' : 'Fiber reused');
     });
 };
+
+exports.test11 = function(callback){
+    asyncblock(function(flow){
+        var test = utility.echo('test').sync();
+
+        flow.wait();
+
+        callback(null, test);
+    });
+};
