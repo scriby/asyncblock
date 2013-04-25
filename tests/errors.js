@@ -255,7 +255,7 @@ suite.addBatch({
     }
 
 });
-
+/*
 suite.addBatch({
     'When trying to use flow.sync incorrectly': {
         topic: function(){
@@ -291,7 +291,7 @@ suite.addBatch({
         }
     }
 });
-
+*/
 suite.addBatch({
     'When throwing a string': {
         topic: function() {

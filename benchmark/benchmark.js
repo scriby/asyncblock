@@ -44,7 +44,7 @@ var assertMetrics = function(time){
 };
 
 var echo = function(message, callback){
-    process.nextTick(
+    setImmediate(
         function(){
             callback(null, message);
         }
