@@ -399,6 +399,35 @@ suite.addBatch({
             assert.equal(err.message, 'ERROR');
             assert.equal(result, null);
         }
+    },
+
+    'When catching an Error returned by a callback': {
+        topic: function() {
+            var self = this;
+
+            asyncblock(function(flow) {
+                try{
+                    asyncError(flow.add('a'));
+                    flow.wait();
+
+                    asyncTickErrorPreserveCallstack(flow.add('b'));
+                    flow.wait();
+
+                    flow.sync(asyncError(flow.add('c')));
+
+                    flow.sync(asyncTickErrorPreserveCallstack(flow.add('d')));
+                } catch(e){
+
+                }
+
+                self.callback();
+            });
+
+        },
+
+        'The exception is caught': function(err, result) {
+
+        }
     }
 });
 

@@ -160,3 +160,15 @@ exports.test11 = function(callback){
         callback(null, test);
     });
 };
+
+exports.test12 = function(callback){
+    asyncblock(function(){
+        try {
+            utility.error('error').sync();
+        } catch(e) {
+
+        }
+
+        callback(null, 'test');
+    });
+};
