@@ -9,7 +9,6 @@ Error.stackTraceLimit = 100;
 var suite = vows.describe('transform');
 var defer = require('../test_data/transform/defer.js');
 var sync = require('../test_data/transform/sync.js');
-var future = require('../test_data/transform/future.js');
 var parse = require('../test_data/transform/parse.js');
 var no_transform = require('../test_data/transform/no_transform.js');
 
@@ -42,7 +41,6 @@ var makeTests = function(file, name){
 
 suite.addBatch(makeTests(defer, 'defer'));
 suite.addBatch(makeTests(sync, 'sync'));
-suite.addBatch(makeTests(future, 'future'));
 
 suite.addBatch({
     'Parser maintains line numbers correctly': {

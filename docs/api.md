@@ -86,31 +86,6 @@ asyncblock(function(){
 });
 ```
 
-### anyAsyncMethod().future([options], [responseFormat]);
-
-Future is similar to defer, but instead of "returning" the result directly, a future is returned. You may call .result on the future to obtain the result at any point
-within the asyncblock (fiber). The main use case for using future over defer would be storing a number of tasks in an array or object such that they run in parallel.
-
-Options and responseFormat are the same as for the add call.
-
-Source transform must be enabled to use this syntax. Call asyncblock.enableTransform() once in the application before requiring modules that use this syntax.
-
-```javascript
-asyncblock(function(){
-    var results = [];
-
-    //Start x reads in parallel
-    for(var i = 0; i < x; i++){
-        results.push(fs.readFile(paths[x], 'utf8').future());
-    }
-
-    //Log all their contents
-    for(i = 0; i < results.length; i++){
-        console.log(results[i].result);
-    }
-});
-```
-
 ### asyncblock.enableTransform([module])
 
 Enables source transformation using asyncblock. If a module is passed (typically using the module keyword), it will be reloaded by asyncblock with source transformations made.
@@ -183,32 +158,6 @@ asyncblock(function(flow){
 });
 ```
 
-### flow.future(options)
-
-* options:
-    * Same as add.options
-
-Create a future which can be used to obtain the result of an asynchronous task.
-
-```javascript
-asyncblock(function(flow){
-    var future = flow.future();
-    fs.readFile(path, 'utf8', future);
-    var contents = future.result;
-});
-```
-
-### flow.future(async task execution)
-
-Pass the entire result of an async task execution to flow.future to create a future for the last added task.
-
-```javascript
-asyncblock(function(flow){
-    var future = flow.future( fs.readFile(path, 'utf8', flow.callback()) ); //flow.add can be used in place of flow.callback
-    var contents = future.result;
-});
-```
-
 ### flow.queue([options], [key], [responseFormat], toExecute)
 
 * Options, key, and responseFormat are the same as in flow.add
@@ -258,100 +207,5 @@ var asyncblock = require('asyncblock');
 
 asyncblock.nostack(function(flow){
     //If errors occur in here, they will get less detail added to their stack trace
-});
-```
-
-### asyncblock.enumerator(function)
-
-Returns an Enumerator, which has the method moveNext and a getter named current.
-
-Enumerators may yield results asynchronously as long as the code calling the enumerator is also in an asyncblock. If the calling code is
-not in an asyncblock, the enumerator must return synchronously.
-
-**Warning** - If you create the enumerator and do not use it, a memory leak will occur. Make sure you call moveNext at least once, or enumerator.end().
-
-One of my favorite uses of this sort of thing is graph walking code. It allows you to separate the traversal logic from the
-business logic.
-
-Here is an example of walking a tree:
-
-```javascript
-var sampleTree = {
-    name: 'root',
-    left: {
-        name: 'L1',
-        left: {
-            name: 'L2'
-        },
-        right: {
-            name: 'R2'
-        }
-    },
-    right: {
-        name: 'R1',
-        right: {
-            name: 'R3'
-        }
-    }
-};
-
-var getPreOrderEnumerator = function(tree) {
-    return asyncblock.enumerator(function(flow){
-        var walk = function(curr){
-            if(curr == null){
-                return;
-            }
-
-            flow.yield(curr);
-            walk(curr.left);
-            walk(curr.right);
-        };
-
-        walk(tree);
-    });
-};
-
-//Use the enumerator
-var preOrder = getPreOrderEnumerator(sampleTree);
-
-while(preOrder.moveNext()){
-    console.log(preOrder.current.name);
-}
-
-//Prints
-/*
-root
-L1
-L2
-R2
-R1
-R3
-*/
-```
-
-Asynchronous generator:
-
-```javascript
-var echo = function(message, callback){
-    process.nextTick(
-        function(){
-            callback(null, message);
-        }
-    );
-};
-
-var inc = asyncblock.enumerator(function(flow){
-    for(var i = 1; i <= 10; i++){
-        echo(i, flow.add());
-        var num = flow.wait();
-
-        flow.yield(num);
-    }
-});
-
-asyncblock(function(flow){
-    while(inc.moveNext()){
-        console.log(inc.current);
-    }
 });
 ```
