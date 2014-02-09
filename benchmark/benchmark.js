@@ -96,31 +96,6 @@ suite.addBatch({
 });
 
 suite.addBatch({
-    'When creating 100,000 asyncblock.enumerators': {
-        topic: function(){
-            var start = new Date();
-
-            for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                var enumerator = asyncblock.enumerator(function(flow){
-
-                });
-
-                enumerator.end();
-            }
-
-            this.callback(null, new Date() - start);
-        },
-
-        'It takes': function(time){
-            printStatus('When creating 100,000 asyncblock.enumerators', time);
-
-            assertMetrics(time);
-        }
-    }
-});
-
-
-suite.addBatch({
     'When doing 100,000 echos with add / wait in series': {
         topic: function(){
             var self = this;
@@ -310,41 +285,5 @@ suite.addBatch({
         }
     }
 });
-
-suite.addBatch({
-    'When doing 100,000 async yields with asyncblock.enumerator': {
-        topic: function(){
-            var self = this;
-            var start = new Date();
-
-            var enumerator = asyncblock.enumerator(function(flow){
-                for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    echo(i, flow.add('val'));
-
-                    flow.yield(flow.wait('val'));
-                }
-            });
-
-            asyncblock(function(flow){
-                while(enumerator.moveNext()){
-                    var num = enumerator.current;
-                }
-
-                var endTime = new Date() - start;
-                //Give the gc time to run
-                setTimeout(function(){
-                    self.callback(null, endTime);
-                }, 3000)
-            });
-        },
-
-        'It takes': function(time){
-            printStatus('When doing 100,000 yields with asyncblock.enumerator', time);
-
-            assertMetrics(time);
-        }
-    }
-});
-
 
 suite.export(module);
