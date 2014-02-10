@@ -1,9 +1,8 @@
 var vows = require('vows');
 var assert = require('assert');
-var util = require('util');
-var asyncblock = require('../asyncblock.js');
+var asyncblock = require('asyncblock');
 
-var suite = vows.describe('functionality');
+var suite = vows.describe('generators');
 
 var noParams = function(callback){
     process.nextTick(function(){
@@ -97,10 +96,10 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immed(flow.add());
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -115,10 +114,10 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 delayed(flow.add());
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -133,10 +132,10 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immedArray(flow.add());
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -151,10 +150,10 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immedMultiple(flow.add());
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -169,11 +168,11 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 delayed(flow.add(1));
                 immed(flow.add(2));
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -191,16 +190,16 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 var startTime = new Date();
 
                 setTimeout(flow.add(), 100);
 
-                flow.wait();
+                yield flow.wait();
 
                 setTimeout(flow.add(), 110);
 
-                flow.wait();
+                yield flow.wait();
 
                 self.callback(null, new Date() - startTime);
             });
@@ -215,14 +214,14 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 immed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 self.callback();
             });
@@ -237,27 +236,27 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 immed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 delayed(flow.add());
                 immed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 delayed(flow.add());
 
-                flow.wait();
+                yield flow.wait();
 
                 immed(flow.add('b'));
 
-                var endResult = flow.wait();
+                var endResult = yield flow.wait();
 
                 self.callback(null, endResult);
             });
@@ -272,18 +271,18 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 delayed(flow.add());
                 delayed(flow.add('t2'));
                 delayed(flow.add('t3'));
 
-                var first = flow.wait();
+                var first = yield flow.wait();
 
                 immed(flow.add());
                 immed(flow.add());
                 delayed(flow.add('t3'));
 
-                var second = flow.wait();
+                var second = yield flow.wait();
 
                 self.callback(null, {first: first, second: second});
             });
@@ -305,10 +304,10 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 delayedAdd(flow, flow.add('t5'));
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -322,14 +321,14 @@ suite.addBatch({
         }
     },
 
-    'When using a formatted result': {
+     'When using a formatted result': {
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 delayed(flow.add(null, ['first']));
 
-                var result = flow.wait();
+                var result = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -342,47 +341,12 @@ suite.addBatch({
         }
     },
 
-    'When using formatted results': {
-        topic: function(){
-            var self = this;
-
-            asyncblock(function(flow){
-                immedArray(flow.add(1, ['first']));
-                delayed(flow.add(2, ['second']));
-                var first = flow.wait();
-
-                immedMultiple(flow.add(['one', 'two', 'three']));
-                var second = flow.wait();
-
-                self.callback(null, {first: first, second: second});
-            });
-        },
-
-        'Returns the right result': function(result){
-
-            assert.deepEqual(result.first, {
-                1: {
-                    first: [1, 2, 3]
-                },
-                2: {
-                    second: 'delayed'
-                }
-            });
-
-            assert.deepEqual(result.second, {
-                one: 1,
-                two: 2,
-                three: 3
-            });
-        }
-    },
-
     'Calling flow.wait when nothing has been added': {
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
-                flow.wait();
+            asyncblock(function*(flow){
+                yield flow.wait();
 
                 self.callback();
             });
@@ -393,64 +357,11 @@ suite.addBatch({
         }
     },
 
-    'maxParallel property limits the number of parallel tasks': {
-        topic: function(){
-            var self = this;
-
-            asyncblock(function(flow){
-                flow.maxParallel = 2; // limit to 2 parallel tasks
-
-                sleepTest(350, flow.add('t350')); // adds first fiber and return immediately (fiber should sleep 350ms)
-                sleepTest(200, flow.add('t200')); // adds second fiber and return immediately (fiber should sleep 200ms)
-                sleepTest(100, flow.add('t100')); // should wait here until t200 finishes (fiber should sleep 100ms)
-
-                var result = flow.wait();
-
-                self.callback(null, result);
-            });
-        },
-
-        'Should limit tasks': function(result){
-            // t200 < t100 < t350
-            assert.greater(result.t100, result.t200);
-            assert.greater(result.t350, result.t100);
-        }
-    },
-
-    'When running maxParallel in a loop': {
-        topic: function(){
-            var self = this;
-
-            asyncblock(function(flow){
-                flow.maxParallel = 10;
-
-                for(var i = 0; i < 105; i++){
-                    if(Math.random() > .5){
-                        immed(flow.add(i));
-                    } else {
-                        delayed(flow.add(i));
-                    }
-                }
-
-                var results = flow.wait();
-                self.callback(null, results);
-            });
-        },
-
-        'All tasks execute': function(results){
-            for(var i = 0; i < 105; i++){
-                if(!(i in results)) {
-                    assert.fail();
-                }
-            }
-        }
-    },
-    
     'When using forceWait to add tasks asyncronously': {
         topic: function() {
             var self = this;
-            
-            asyncblock(function(flow) {
+
+            asyncblock(function*(flow) {
                 process.nextTick(function(){
                     delayed(flow.add('delayed'));
                     immed(flow.add('immed'));
@@ -459,13 +370,13 @@ suite.addBatch({
                         flow.doneAdding();
                     });
                 });
-                
-                var result = flow.forceWait();
-                
+
+                var result = yield flow.forceWait();
+
                 self.callback(null, result);
             });
         },
-        
+
         'All tasks are waited on': function(result){
             assert.deepEqual(result, { delayed: 'delayed', immed: 'immed' });
         }
@@ -475,7 +386,7 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.queue('delayed', function(callback){
                     delayed(callback);
                 });
@@ -484,7 +395,7 @@ suite.addBatch({
                     immed(callback);
                 });
 
-                var first = flow.wait();
+                var first = yield flow.wait();
 
                 immed(flow.callback('immed'));
 
@@ -494,17 +405,17 @@ suite.addBatch({
                     delayed(callback);
                 });
 
-                var second = flow.wait();
+                var second = yield flow.wait();
 
                 flow.queue({ key: 'delayed3', timeout: 1000 }, function(callback){
                     delayed(callback);
                 });
-                var third = flow.wait();
+                var third = yield flow.wait();
 
                 flow.queue({ key: 'delayed4', timeout: 1000 }, function(callback){
                     delayed(callback);
                 });
-                var fourth = flow.wait('delayed4');
+                var fourth = yield flow.wait('delayed4');
 
                 self.callback(null, { first: first, second: second, third: third, fourth: fourth });
             });
@@ -534,7 +445,7 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.maxParallel = 10;
                 var startTime = new Date();
 
@@ -552,7 +463,7 @@ suite.addBatch({
                     })(i);
                 }
 
-                var result = flow.forceWait();
+                var result = yield flow.forceWait();
                 var endTime = new Date();
 
                 result.time = endTime - startTime;
@@ -577,29 +488,29 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 var result = {};
 
                 delayed(flow.add('delayed'));
-                result.delayed = flow.wait('delayed');
+                result.delayed = yield flow.wait('delayed');
 
                 process.nextTick(function(){
                     delayed(flow.add('delayed1'));
                 });
 
-                result.delayed1 = flow.wait('delayed1');
+                result.delayed1 = yield flow.wait('delayed1');
 
                 immed(flow.add());
-                result.immed = flow.wait();
+                result.immed = yield flow.wait();
 
                 delayed(flow.add('delayed2'));
                 delayed(flow.add('delayed3'));
-                result.delayed3 = flow.wait('delayed3');
+                result.delayed3 = yield flow.wait('delayed3');
 
-                result.delayed2 = flow.wait();
+                result.delayed2 = yield flow.wait();
 
                 noParams(flow.add('noParams'));
-                result.noParams = flow.wait('noParams');
+                result.noParams = yield flow.wait('noParams');
 
                 self.callback(null,result);
             });
@@ -624,10 +535,10 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 immedMultiple(flow.add({ key: 'key', responseFormat: ['one', 'two', 'three']}));
 
-                self.callback(null, flow.wait());
+                self.callback(null, yield flow.wait());
             });
         },
 
@@ -644,17 +555,17 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
-                var first = flow.sync(immed);
-                var second = flow.sync(delayed);
+            asyncblock(function*(flow){
+                var first = yield flow.sync(immed);
+                var second = yield flow.sync(delayed);
 
                 delayed(flow.add('delayed'));
-                var third = flow.sync(immed);
-                var fourth = flow.sync(echo, 'fourth');
+                var third = yield flow.sync(immed);
+                var fourth = yield flow.sync(echo, 'fourth');
 
-                var fifth = flow.wait('delayed');
+                var fifth = yield flow.wait('delayed');
 
-                var sixth = flow.sync({}, echo, 'sixth');
+                var sixth = yield flow.sync({}, echo, 'sixth');
 
                 self.callback(null, { first: first, second: second, third: third, fourth: fourth, fifth: fifth, sixth: sixth});
             });
@@ -675,50 +586,50 @@ suite.addBatch({
             var self = this;
             var result = {};
 
-            asyncblock(function(outerFlow){
+            asyncblock(function*(outerFlow){
                 echo('outer', outerFlow.add('outer'));
 
-                asyncblock(function(innerFlow1){
+                asyncblock(function*(innerFlow1){
                     var cont = outerFlow.add();
 
                     echo('innerFlow1', innerFlow1.add());
-                    result.innerFlow1 = innerFlow1.wait();
+                    result.innerFlow1 = yield innerFlow1.wait();
 
                     cont();
                 });
 
-                asyncblock(function(innerFlow2){
+                asyncblock(function*(innerFlow2){
                     echo('innerFlow2', innerFlow2.add('innerFlow2'));
                 });
 
-                asyncblock(function(innerFlow3){
+                asyncblock(function*(innerFlow3){
                     var cont = outerFlow.add();
 
                     echoImmed('innerFlow3', innerFlow3.add());
-                    result.innerFlow3 = innerFlow3.wait();
+                    result.innerFlow3 = yield innerFlow3.wait();
 
                     cont();
                 });
 
-                asyncblock(function(innerFlow4){
+                asyncblock(function*(innerFlow4){
                     var cont = outerFlow.add();
 
                     echo('innerFlow4', innerFlow4.add('a'));
-                    result.innerFlow4a = innerFlow4.wait();
+                    result.innerFlow4a = yield innerFlow4.wait();
 
                     echo('innerFlow4', innerFlow4.add('b'));
-                    result.innerFlow4b = innerFlow4.wait();
+                    result.innerFlow4b = yield innerFlow4.wait();
 
                     cont();
                 });
 
-                asyncblock(function(innerFlow5){
+                asyncblock(function*(innerFlow5){
                     process.nextTick(function(){
                         echo('innerFlow5', innerFlow5.add());
                     });
                 });
 
-                asyncblock(function(innerFlow6){
+                asyncblock(function*(innerFlow6){
                     var cont = outerFlow.add();
 
                     process.nextTick(function(){
@@ -727,13 +638,12 @@ suite.addBatch({
                         innerFlow6.doneAdding();
                     });
 
-                    result.innerFlow6 = innerFlow6.forceWait();
+                    result.innerFlow6 = yield innerFlow6.forceWait();
                     cont();
                 });
 
-                result.outer = outerFlow.wait('outer');
-                outerFlow.wait();
-
+                result.outer = yield outerFlow.wait('outer');
+                yield outerFlow.wait();
 
                 self.callback(null, result);
             });
@@ -754,32 +664,32 @@ suite.addBatch({
             var self = this;
             var result = {};
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 echo('first', flow.set('first'));
-                result.first = flow.get('first');
+                result.first = yield flow.get('first');
 
                 echo('second', flow.set('second'));
-                result.second = flow.get('second');
-                result.second = flow.get('second'); //Make sure we can get it twice
+                result.second = yield flow.get('second');
+                result.second = yield flow.get('second'); //Make sure we can get it twice
 
                 echo('third', flow.set('third'));
-                flow.wait(); //Make sure flow.wait doesn't interfere
-                result.third = flow.get('third');
+                yield flow.wait(); //Make sure flow.wait doesn't interfere
+                result.third = yield flow.get('third');
 
                 echoImmed('fourth', flow.set('fourth'));
-                result.fourth = flow.get('fourth');
+                result.fourth = yield flow.get('fourth');
 
                 echo('fifth', flow.set('fifth'));
-                result.fifth = flow.wait('fifth');
+                result.fifth = yield flow.wait('fifth');
 
                 echo('sixth', flow.add('sixth'));
-                result.sixth = flow.get('sixth');
+                result.sixth = yield flow.get('sixth');
 
                 flow.del('sixth');
                 process.nextTick(function(){
                     echo('seventh', flow.set('sixth'));
                 });
-                result.seventh = flow.get('sixth');
+                result.seventh = yield flow.get('sixth');
 
                 self.callback(null, result);
             });
@@ -798,35 +708,15 @@ suite.addBatch({
         }
     },
 
-    'When creating asyncblocks using fullstack & nostack': {
-        topic: function(){
-            var self = this;
-
-            asyncblock.nostack(function(flow){
-
-            });
-
-            asyncblock.fullstack(function(flow){
-
-            });
-
-            self.callback();
-        },
-
-        'No errors occur': function(){
-
-        }
-    },
-
     'When using 1.7 flow.sync syntax': {
         topic: function(){
             var self = this;
             var result = {};
 
-            asyncblock(function(flow){
-                result.first = flow.sync(echo('first', flow.add()));
+            asyncblock(function*(flow){
+                result.first = yield flow.sync(echo('first', flow.add()));
 
-                result.second = flow.sync(echoImmed('second', flow.callback()));
+                result.second = yield flow.sync(echoImmed('second', flow.callback()));
 
                 self.callback(null, result);
             });
@@ -842,19 +732,19 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 var result = {};
 
                 echoAsFirstArg('first', flow.add( { firstArgIsError: false } ));
-                result.first = flow.wait();
+                result.first = yield flow.wait();
 
                 flow.firstArgIsError = false;
 
                 echoAsFirstArgSync('second', flow.add());
-                result.second = flow.wait();
+                result.second = yield flow.wait();
 
                 echoAsFirstArg('third', flow.add( { responseFormat: ['result'] } ));
-                result.third = flow.wait();
+                result.third = yield flow.wait();
 
                 self.callback(null, result);
             });
@@ -870,10 +760,10 @@ suite.addBatch({
     'When using 2nd arg as callback': {
         topic: function(){
             asyncblock(
-                function(flow){
+                function*(flow){
                     echo('test', flow.add());
 
-                    return flow.wait();
+                    return yield flow.wait();
                 },
 
                 this.callback
@@ -887,7 +777,7 @@ suite.addBatch({
 
     'When using 2nd arg as callback with error': {
         topic: function(){
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 echo('test', flow.add());
 
                 throw new Error('Error');
@@ -899,32 +789,13 @@ suite.addBatch({
         }
     },
 
-    'When using asyncblock.currentFlow': {
-        topic: function(){
-            var testCurrent = function(){
-                var flow = asyncblock.getCurrentFlow();
-
-                echo('test', flow.add());
-                return flow.wait();
-            };
-
-            asyncblock(function(){
-                return testCurrent();
-            }, this.callback);
-        },
-
-        'Ok': function(result){
-            assert.equal(result, 'test');
-        }
-    },
-
     'When receiving an object as an error': {
         topic: function(){
             var x = function(callback){
-                asyncblock(function(flow){
+                asyncblock(function*(flow){
                     var x = flow.add();
                     x({ msg: 'test' });
-                    flow.wait();
+                    yield flow.wait();
                 }, callback);
             };
 
@@ -940,10 +811,10 @@ suite.addBatch({
     'When receiving a string as an error': {
         topic: function(){
             var x = function(callback){
-                asyncblock(function(flow){
+                asyncblock(function*(flow){
                     var x = flow.add();
                     x('test');
-                    flow.wait();
+                    yield flow.wait();
                 }, callback);
             };
 
@@ -959,10 +830,10 @@ suite.addBatch({
     'When receiving an Error object as an error': {
         topic: function(){
             var x = function(callback){
-                asyncblock(function(flow){
+                asyncblock(function*(flow){
                     var x = flow.add();
                     x(new Error('test'));
-                    flow.wait();
+                    yield flow.wait();
                 }, callback);
             };
 
@@ -975,7 +846,5 @@ suite.addBatch({
         }
     }
 });
-
-
 
 suite.export(module);

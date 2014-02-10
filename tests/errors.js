@@ -5,6 +5,12 @@ var asyncblock = require('../asyncblock.js');
 
 var suite = vows.describe('errors');
 
+//Vows seems to be masking uncaught exceptions and not printing anything...
+process.on('uncaughtException', function(err){
+    console.log(err)
+    process.exit(1);
+});
+
 var asyncError = function(callback){
     callback('asyncError');
 };
