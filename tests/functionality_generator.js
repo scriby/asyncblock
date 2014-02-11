@@ -2,7 +2,12 @@ var vows = require('vows');
 var assert = require('assert');
 var asyncblock = require('asyncblock');
 
-var suite = vows.describe('generators');
+if(!asyncblock.areGeneratorsSupported()){
+    console.log('Generators not supported - skipping functionality_generator tests');
+    return;
+}
+
+var suite = vows.describe('functionality_generator');
 
 var noParams = function(callback){
     process.nextTick(function(){

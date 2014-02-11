@@ -3,7 +3,7 @@ var assert = require('assert');
 
 var asyncblock = require('../asyncblock.js');
 
-var suite = vows.describe('errors');
+var suite = vows.describe('errors_generator');
 
 var asyncError = function(callback){
     callback('asyncError');
@@ -26,11 +26,11 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = self.callback;
 
                 asyncTickError(flow.add());
-                flow.wait();
+                yield flow.wait();
 
                 throw new Error("This line shouldn't execute");
             });
@@ -47,11 +47,11 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = self.callback;
 
                 asyncError(flow.add());
-                flow.wait();
+                yield flow.wait();
 
                 throw new Error("This line shouldn't execute");
             });
@@ -68,7 +68,7 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 var callback = flow.errorCallback = function(err){
                     if(err) {
                         self.callback(err);
@@ -96,16 +96,16 @@ suite.addBatch({
             var self = this;
 
             var testFunc = function(callback){
-                asyncblock(function(flow){
+                asyncblock(function*(flow){
                     return callback(new Error('from testFunc'));
                 });
             };
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = self.callback;
 
                 testFunc(flow.add());
-                flow.wait();
+                yield flow.wait();
 
                 throw new Error("This line shouldn't execute");
             });
@@ -123,19 +123,19 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = self.callback;
 
                 asyncTickErrorPreserveCallstack(flow.add());
-                flow.wait();
+                yield flow.wait();
 
                 throw new Error("This line shouldn't execute");
             });
         },
 
         'Call stack is preserved': function(err, result){
-            var index = err.stack.indexOf('Pre-async stack');
-            assert.greater(index, 0);
+            //var index = err.stack.indexOf('Pre-async stack');
+            //assert.greater(index, 0);
 
             var index = err.stack.indexOf('Pre-asyncblock stack');
             assert.greater(index, 0);
@@ -148,22 +148,22 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = self.callback;
 
                 asyncTickError(flow.addIgnoreError());
                 asyncError(flow.callbackIgnoreError());
-                var first = flow.wait();
+                var first = yield flow.wait();
 
                 flow.queueIgnoreError(function(callback){
                     asyncTickError(callback);
                 });
-                var second = flow.wait();
+                var second = yield flow.wait();
 
                 flow.queueIgnoreError(function(callback){
                     asyncError(callback);
                 });
-                var third = flow.wait();
+                var third = yield flow.wait();
 
                 self.callback(null, { first: first, second: second, third: third });
             });
@@ -194,9 +194,9 @@ suite.addBatch({
                 });
             };
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 doubleCallback(flow.add());
-                flow.wait();
+                yield flow.wait();
 
                 self.callback();
             });
@@ -213,14 +213,14 @@ suite.addBatch({
         topic: function(){
             var self = this;
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 flow.errorCallback = function(err){
                     self.callback(null, 'outer');
                 };
 
                 var outerCont = flow.add();
 
-                asyncblock(function(innerFlow){
+                asyncblock(function*(innerFlow){
                     innerFlow.errorCallback = function(err){
                         self.callback('This error handler should not be called');
                     };
@@ -230,12 +230,12 @@ suite.addBatch({
                         cont();
                     });
 
-                    innerFlow.wait();
+                    yield innerFlow.wait();
 
                     outerCont();
                 });
 
-                flow.wait();
+                yield flow.wait();
 
                 throw new Error();
             });
@@ -247,48 +247,12 @@ suite.addBatch({
     }
 
 });
-/*
-suite.addBatch({
-    'When trying to use flow.sync incorrectly': {
-        topic: function(){
-            var self = this;
-            var errors = {};
 
-            var testFunc = function(flow, callback){
-                flow.add();
-
-                callback();
-            };
-
-            asyncblock(function(flow){
-                try{
-                    flow.sync(testFunc(flow, flow.add()));
-                } catch(e){
-                    errors.first = e;
-                }
-
-                try{
-                    flow.sync(null);
-                } catch(e){
-                    errors.second = e;
-                }
-
-                self.callback(null, errors);
-            });
-        },
-
-        'The correct errors occurred': function(errors){
-            assert.isUndefined(errors.first); //The behavior of this has changed such that sync can be used in this fashion
-            assert.instanceOf(errors.second, Error);
-        }
-    }
-});
-*/
 suite.addBatch({
     'When throwing a string': {
         topic: function() {
             var self = this;
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.errorCallback = self.callback;
                 throw 'ERROR';
             });
@@ -303,7 +267,7 @@ suite.addBatch({
     'When throwing an Error': {
         topic: function() {
             var self = this;
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.errorCallback = self.callback;
                 throw new Error('ERROR');
             });
@@ -321,16 +285,16 @@ suite.addBatch({
             var self = this;
 
             var throwError = function(callback) {
-                asyncblock(function(flow) {
+                asyncblock(function*(flow) {
                     flow.errorCallback = callback;
                     throw 'ERROR';
                 })
             };
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.errorCallback = self.callback;
                 throwError(flow.add());
-                flow.wait();
+                yield flow.wait();
             });
         },
 
@@ -347,17 +311,17 @@ suite.addBatch({
 
             var throwError = function(callback) {
                 process.nextTick(function(){
-                    asyncblock(function(flow) {
+                    asyncblock(function*(flow) {
                         flow.errorCallback = callback;
                         throw new Error('ERROR');
                     })
                 });
             };
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.errorCallback = self.callback;
                 throwError(flow.add());
-                flow.wait();
+                yield flow.wait();
             });
         },
 
@@ -373,16 +337,16 @@ suite.addBatch({
             var self = this;
 
             var throwError = function(callback) {
-                asyncblock(function(flow) {
+                asyncblock(function*(flow) {
                     flow.errorCallback = callback;
                     throw new Error('ERROR');
                 })
             };
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 flow.errorCallback = self.callback;
                 throwError(flow.add());
-                flow.wait();
+                yield flow.wait();
             });
         },
 
@@ -397,10 +361,10 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
                     asyncError(flow.add('a'));
-                    flow.wait();
+                    yield flow.wait();
                 } catch(e){}
 
                 self.callback();
@@ -414,10 +378,10 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
                     asyncTickErrorPreserveCallstack(flow.add('b'));
-                    flow.wait();
+                    yield flow.wait();
                 } catch(e){}
 
                 self.callback();
@@ -431,9 +395,9 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
-                    flow.sync(asyncError(flow.add('c')));
+                    yield flow.sync(asyncError(flow.add('c')));
                 } catch(e){}
 
                 self.callback();
@@ -447,9 +411,9 @@ suite.addBatch({
         topic: function() {
             var self = this;
 
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
-                    flow.sync(asyncTickErrorPreserveCallstack(flow.add('d')));
+                    yield flow.sync(asyncTickErrorPreserveCallstack(flow.add('d')));
                 } catch(e){}
 
                 self.callback();
@@ -461,10 +425,10 @@ suite.addBatch({
 
     'When catching an Error returned by a callback, with errorCallback (sync)': {
         topic: function() {
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
                     asyncError(flow.add('a'));
-                    flow.wait();
+                    yield flow.wait();
                 } catch(e){}
             }, this.callback);
         },
@@ -474,10 +438,10 @@ suite.addBatch({
 
     'When catching an Error returned by a callback, with errorCallback (async)': {
         topic: function() {
-            asyncblock(function(flow) {
+            asyncblock(function*(flow) {
                 try{
                     asyncTickErrorPreserveCallstack(flow.add('a'));
-                    flow.wait();
+                    yield flow.wait();
                 } catch(e){}
             }, this.callback);
         },
