@@ -442,6 +442,32 @@ suite.addBatch({
                 try{
                     asyncTickErrorPreserveCallstack(flow.add('a'));
                     yield flow.wait();
+                } catch(e){ }
+            }, this.callback);
+        },
+
+        'The exception is caught': function(result) {}
+    },
+
+    'When catching an Error returned by a callback, with errorCallback (sync), wait for specific key': {
+        topic: function() {
+            asyncblock(function*(flow) {
+                try{
+                    asyncError(flow.add('a'));
+                    yield flow.wait('a');
+                } catch(e){}
+            }, this.callback);
+        },
+
+        'The exception is caught': function(result) {}
+    },
+
+    'When catching an Error returned by a callback, with errorCallback (async), wait for specific key': {
+        topic: function() {
+            asyncblock(function*(flow) {
+                try{
+                    asyncTickErrorPreserveCallstack(flow.add('a'));
+                    yield flow.wait('a');
                 } catch(e){}
             }, this.callback);
         },
