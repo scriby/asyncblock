@@ -852,4 +852,48 @@ suite.addBatch({
     }
 });
 
+suite.addBatch({
+    'When yielding without waiting on an async task': {
+        topic: function(){
+            asyncblock(function*(flow){
+                return yield echo('test', flow.cb());
+            }, this.callback);
+        },
+
+        'The echo value is returned': function(val){
+            assert.equal(val, 'test');
+        }
+    },
+
+    'When yielding without waiting on a sync task': {
+        topic: function(){
+            asyncblock(function*(flow){
+                return yield echoImmed('test', flow.cb());
+            }, this.callback);
+        },
+
+        'The echo value is returned': function(val){
+            assert.equal(val, 'test');
+        }
+    },
+
+    'When yielding without waiting a couple times': {
+        topic: function(){
+            asyncblock(function*(flow){
+                var results = {};
+
+                results.echo = yield echo('test', flow.cb());
+                results.echoImmed = yield echoImmed('test', flow.cb());
+
+                return results;
+            }, this.callback);
+        },
+
+        'The echo value is returned': function(results){
+            assert.equal(results.echo, 'test');
+            assert.equal(results.echoImmed, 'test');
+        }
+    }
+});
+
 suite.export(module);
