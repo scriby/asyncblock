@@ -12,8 +12,8 @@
 		"url": "git://github.com/scriby/asyncblock.git"
 	},
 	"dependencies": {
-		"fibers": "1.0.0",
-        "uglify-js_scriby": "https://github.com/scriby/UglifyJS/tarball/1.2.5-6"
+		"fibers": "git://github.com/laverdet/node-fibers.git#d1d59a9f55e269df66b3a5b8630b94fd19564b62",
+        "esprima": "git://github.com/ariya/esprima.git#f5a68a6e951bf008da504b6fbfb84d856313846c"
 	},
     "devDependencies": {
         "vows": "0.7.0",
