@@ -49,7 +49,6 @@ suite.addBatch({
         },
 
         'Line numbers correct': function(result){
-            assert.isTrue(parse.lineCountMaintained);
             assert.equal(result, 'test');
         }
     }
