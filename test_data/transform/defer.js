@@ -153,3 +153,12 @@ exports.test14 = function(callback){
     return echo;
   }, callback);
 };
+
+exports.test15 = function(callback){
+  asyncblock(function(){
+    var x = utility.echo('test').defer();
+    var y = x;
+
+    return y;
+  }, callback);
+};
