@@ -162,3 +162,14 @@ exports.test15 = function(callback){
     return y;
   }, callback);
 };
+
+exports.test16 = function(callback){
+  asyncblock(function(){
+    var x = utility.echo('test').defer();
+    var y = x.length;
+
+    if(y === 4){
+      return 'test';
+    }
+  }, callback);
+};
