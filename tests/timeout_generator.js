@@ -3,11 +3,6 @@ var assert = require('assert');
 
 var asyncblock = require('../asyncblock.js');
 
-if(!asyncblock.areGeneratorsSupported()){
-    console.log('Generators not supported - skipping timeout_generator tests');
-    return;
-}
-
 var suite = vows.describe('timeout_generator');
 
 // sleeps for the specified amount of time and then calls the callback
