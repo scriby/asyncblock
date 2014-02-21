@@ -1,5 +1,10 @@
 var asyncblock;
 asyncblock = require('asyncblock'); //Test coffeescript style
+
+if(false){
+  return; //Make sure top-level returns are supported by the parser
+}
+
 var utility = require('./utility.js');
 var Fiber = require('fibers');
 
