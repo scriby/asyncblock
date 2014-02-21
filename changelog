@@ -1,3 +1,7 @@
+2.1.16
+
+* Replace Uglify parser with Esprima parser
+
 2.1.15
 
 * Adding "ifError" to wrap callbacks that should only be called in the case of an error
