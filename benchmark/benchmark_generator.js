@@ -57,7 +57,7 @@ suite.addBatch({
             var start = new Date();
 
             for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                asyncblock(function(flow){
+                asyncblock(function*(flow){
 
                 });
             }
@@ -79,7 +79,7 @@ suite.addBatch({
             var start = new Date();
 
             for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                asyncblock.nostack(function(flow){
+                asyncblock.nostack(function*(flow){
 
                 });
             }
@@ -101,10 +101,10 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
                     echo(i, flow.add());
-                    flow.wait();
+                    yield flow.wait();
                 }
 
                 self.callback(null, new Date() - start);
@@ -125,12 +125,12 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
                     echo(i, flow.add());
                 }
 
-                flow.wait();
+                yield flow.wait();
 
                 self.callback(null, new Date() - start);
             });
@@ -150,10 +150,10 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
                     echo(i, flow.set(i));
-                    flow.get(i);
+                    yield flow.get(i);
                 }
 
                 self.callback(null, new Date() - start);
@@ -174,9 +174,9 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    flow.sync( echo(i, flow.callback()) );
+                    yield flow.sync( echo(i, flow.callback()) );
                 }
 
                 self.callback(null, new Date() - start);
@@ -197,9 +197,9 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
-                    flow.sync(echo, i);
+                    yield flow.sync(echo, i);
                 }
 
                 self.callback(null, new Date() - start);
@@ -220,10 +220,10 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
                     var future = flow.future( echo(i, flow.callback() ));
-                    future.result;
+                    yield future.result;
                 }
 
                 self.callback(null, new Date() - start);
@@ -244,11 +244,11 @@ suite.addBatch({
             var self = this;
             var start = new Date();
 
-            asyncblock(function(flow){
+            asyncblock(function*(flow){
                 for(var i = 0; i < ONE_HUNDRED_THOUSAND; i++){
                     var future = flow.future();
                     echo(i, future);
-                    future.result;
+                    yield future.result;
                 }
 
                 self.callback(null, new Date() - start);
@@ -262,7 +262,7 @@ suite.addBatch({
         }
     }
 });
-
+/*
 suite.addBatch({
     'When doing 1,000 source transforms': {
         topic: function(){
@@ -285,5 +285,5 @@ suite.addBatch({
         }
     }
 });
-
+*/
 suite.export(module);

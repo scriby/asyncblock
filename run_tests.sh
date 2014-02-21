@@ -1,1 +1,1 @@
-./node_modules/vows/bin/vows ./tests/* --spec
+node --harmony-generators ./node_modules/vows/bin/vows ./tests/* --spec

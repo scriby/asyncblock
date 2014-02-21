@@ -1,5 +1,5 @@
-var asyncblock = require('asyncblock');
 var utility = require('./utility.js');
+var asyncblock = require('asyncblock');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){
@@ -145,4 +145,31 @@ exports.test13 = function(callback){
 
         callback(null, deferred);
     });
+};
+
+exports.test14 = function(callback){
+  asyncblock(function(){
+    var echo = utility.echo('test').defer();
+    return echo;
+  }, callback);
+};
+
+exports.test15 = function(callback){
+  asyncblock(function(){
+    var x = utility.echo('test').defer();
+    var y = x;
+
+    return y;
+  }, callback);
+};
+
+exports.test16 = function(callback){
+  asyncblock(function(){
+    var x = utility.echo('test').defer();
+    var y = x.length;
+
+    if(y === 4){
+      return 'test';
+    }
+  }, callback);
 };

@@ -109,9 +109,9 @@ asyncblock(function(flow){
 * May require additional variables to be declared (if moving the result of flow.wait into a variable)
 * "One-liner" syntax is a little more verbose than other techniques
 
-## x.sync(), x.defer(), x.future() (Source transformation)
+## x.sync(), x.defer() (Source transformation)
 
-You can chain sync, defer, or future on the end of any async function call. Sync waits for the call to finish before continuing.
+You can chain sync or defer on the end of any async function call. Sync waits for the call to finish before continuing.
 Defer waits for the call to complete on the first access to the variable the result is stored into.
 Future returns a future which you can read the .result property of to obtain the result.
 
@@ -135,11 +135,8 @@ asyncblock(function(){
     //Yield on the first access to the contents1 variable
     var contents1 = fs.readFile(path1, 'utf8').defer();
 
-    //Set a future to contents2
-    var contents2 = fs.readFile(path2, 'utf8').future();
-
     //Wait for the file to finish writing before proceeding
-    fs.writeFile(contents + contents1 + contents2.result).sync();
+    fs.writeFile(contents + contents1).sync();
 });
 ```
 
@@ -154,34 +151,6 @@ asyncblock(function(){
 
 * When writing standalone scripts, you have to remember to enable the transform (like the example above)
 * Adds some overhead to the module require process (I've profiled the code and made optimizations to keep the overhead minimal)
-
-## flow.future
-
-Creates a future which can be used to get the result of an asynchronous function. When .result is accessed, the current fiber will
-yield until the result is ready.
-
-Simple example:
-
-```javascript
-asyncblock(function(flow){
-    var future = flow.future();
-    fs.readFile(path, 'utf8', future);
-    var contents = future.result;
-
-    //Or, like this
-    var future = flow.future(fs.readFile(path, 'utf8', flow.callback())); //flow.add can be used in place of flow.callback
-    var contents = future.result;
-});
-```
-
-### Pros
-
-* Has same advantages as flow.get / flow.set, but might be desired based on personal preference
-
-### Cons
-
-* Same cons as flow.get / flow.set
-* Syntax a little more verbose than flow.get / flow.set
 
 ## flow.sync
 
@@ -239,25 +208,6 @@ asyncblock(function(flow){
 ### Cons
 
 * No reason to use it except when it's required
-
-## Enumerators
-
-Use enumerators to implement lazy lists, iterators, or other similar things. If you have used the "yield return" keyword
-in .NET, this is very similar. See the API documentation for more information.
-
-A simple enumerator that counts from 1 to 10:
-
-```javascript
-var inc = asyncblock.generator(function(flow){
-    for(var i = 1; i <= 10; i++){
-        flow.yield(i);
-    }
-});
-
-while(inc.moveNext())){
-    console.log(inc.current);
-}
-```
 
 ## API doc
 
