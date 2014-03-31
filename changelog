@@ -1,3 +1,7 @@
+2.1.19
+
+* Return a 2 arg function for the task callback to work better with libraries that perform arg length sniffing
+
 2.1.18
 
 * Switch to fibers 1.0.1 from 1.0.0
