@@ -1,3 +1,7 @@
+2.1.20
+
+* Ensure only one instance of asyncblock loads per process to avoid some weird interactions between multiple separate includes
+
 2.1.19
 
 * Return a 2 arg function for the task callback to work better with libraries that perform arg length sniffing
