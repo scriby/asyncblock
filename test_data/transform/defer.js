@@ -173,3 +173,13 @@ exports.test16 = function(callback){
     }
   }, callback);
 };
+
+exports.test17 = function(callback) {
+  asyncblock(function() {
+    var x = utility.echo('test').defer();
+    var y = utility.echo(x).defer();
+
+    return y;
+  }, callback);
+
+};
