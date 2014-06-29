@@ -1,3 +1,7 @@
+2.1.21
+
+* Fix an issue with defer variables passed to functions getting replaced improperly
+
 2.1.20
 
 * Ensure only one instance of asyncblock loads per process to avoid some weird interactions between multiple separate includes
