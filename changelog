@@ -1,3 +1,7 @@
+2.1.22
+
+* Upgrade esprima to 1.2.2
+
 2.1.21
 
 * Fix an issue with defer variables passed to functions getting replaced improperly
