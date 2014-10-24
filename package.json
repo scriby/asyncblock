@@ -12,7 +12,7 @@
 		"url": "git://github.com/scriby/asyncblock.git"
 	},
 	"dependencies": {
-		"fibers": "1.0.1",
+		"fibers": "1.0.2",
     "esprima": "1.2.2"
 	},
     "devDependencies": {
