@@ -1,3 +1,7 @@
+2.1.25
+
+* Upgrade fibers to 1.0.6
+
 2.1.22
 
 * Upgrade esprima to 1.2.2
