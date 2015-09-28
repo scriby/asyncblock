@@ -1,3 +1,7 @@
+2.2.0
+
+* Merged PR https://github.com/scriby/asyncblock/pull/28 (fix an issue with some flow.sync syntaxes, upgrade Esprima)
+
 2.1.26
 
 * Upgrade to fibers 1.0.7
