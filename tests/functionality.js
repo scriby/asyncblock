@@ -670,6 +670,42 @@ suite.addBatch({
         }
     },
 
+    'When running sync task with array syntax': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                var result = flow.sync(["one", "two", "three"], immedMultiple);
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.one, 1);
+            assert.equal(result.two, 2);
+            assert.equal(result.three, 3);
+        }
+    },
+
+    'When running sync task with object syntax': {
+        topic: function(){
+            var self = this;
+
+            asyncblock(function(flow){
+                var result = flow.sync({key: "dont_care", responseFormat: ["one", "two", "three"]}, immedMultiple);
+
+                self.callback(null, result);
+            });
+        },
+
+        'The results are as expected': function(result){
+            assert.equal(result.one, 1);
+            assert.equal(result.two, 2);
+            assert.equal(result.three, 3);
+        }
+    },
+
     'When running asyncblocks inside of asyncblocks': {
         topic: function(){
             var self = this;
