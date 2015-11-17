@@ -1,3 +1,7 @@
+2.2.1
+
+* Fixed an issue with errored tasks not getting cleaned up properly in some cases
+
 2.2.0
 
 * Merged PR https://github.com/scriby/asyncblock/pull/28 (fix an issue with some flow.sync syntaxes, upgrade Esprima)
