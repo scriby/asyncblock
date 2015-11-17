@@ -21,6 +21,12 @@ var asyncTickErrorPreserveCallstack = function(callback){
     });
 };
 
+var echoAsFirstArg = function(message, callback){
+    process.nextTick(function(){
+        callback(message);
+    });
+};
+
 suite.addBatch({
     'Error after async call': {
         topic: function(){
@@ -509,6 +515,24 @@ suite.addBatch({
         },
 
         'The exception is caught': function(result) {}
+    },
+
+    'When a flow.sync errors': {
+        topic: function() {
+            asyncblock(function(flow) {
+                try {
+                    flow.sync(echoAsFirstArg('test', flow.add()));
+                } catch(e) {
+                    //swallow
+                }
+
+                return flow.wait();
+            }, this.callback);
+        },
+
+        'Results does not contain the sync task': function(result, undefined) {
+            assert(result == null);
+        }
     }
 });
 
