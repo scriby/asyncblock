@@ -1,3 +1,11 @@
+2.2.5
+
+* Actually switch from fibers to fibers-scriby
+
+2.2.4
+
+* Switch from fibers to fibers-scriby to include pre-compiled node v4 binaries
+
 2.2.3
 
 * Bump fibers to 1.0.8
