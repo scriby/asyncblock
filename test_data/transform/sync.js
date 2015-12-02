@@ -6,7 +6,7 @@ if(false){
 }
 
 var utility = require('./utility.js');
-var Fiber = require('fibers');
+var Fiber = require('fibers-scriby');
 
 exports.test1 = function(callback){
     asyncblock(function(flow){
