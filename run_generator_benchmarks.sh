@@ -1,1 +1,0 @@
-node ./node_modules/vows/bin/vows ./benchmark/benchmark_generator.js

@@ -1,11 +1,12 @@
 {
 	"name": "asyncblock",
-	"version": "2.2.5",
+	"version": "2.2.6",
 	"description": "A simple and powerful abstraction of node-fibers",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],
 	"homepage": "https://github.com/scriby/asyncblock",
 	"author": "Chris Scribner",
+	"license": "MIT",
 	"main": "asyncblock",
 	"repository": {
 		"type": "git",
@@ -13,7 +14,7 @@
 	},
 	"dependencies": {
 	    "fibers-scriby": "1.0.8",
-        "esprima": "2.6.0"
+		  "asyncblock-generators": "2.2.8"
 	},
     "devDependencies": {
         "vows": "0.7.0",

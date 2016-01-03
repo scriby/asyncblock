@@ -9,7 +9,8 @@ _  __ `/__  ___/__  / / /__  __ \_  ___/__  __ \__  / _  __ \_  ___/__  //_/
 ```
 ==================================================================
 
-A fully fledged flow control library built on top of fibers.
+A fully fledged flow control library built on top of fibers. Don't want to use Fibers and on node v4+? Check out
+[asyncblock-generators](https://github.com/scriby/asyncblock-generators).
 
 ###Installation
 
@@ -59,7 +60,9 @@ asyncblock(function(flow){
 ### Sleeping in parallel
 
 ```javascript
-asyncblock(function(flow){
+var ab = require('asyncblock');
+
+ab(function(flow){
     console.time('time');
 
     setTimeout(flow.add(), 1000);
@@ -73,7 +76,9 @@ asyncblock(function(flow){
 ### Trapping results
 
 ```javascript
-asyncblock(function(flow) {
+var ab = require('asyncblock');
+
+ab(function(flow) {
     //Start two parallel file reads
     fs.readFile(path1, 'utf8', flow.set('contents1'));
     fs.readFile(path2, 'utf8', flow.set('contents2'));
@@ -103,7 +108,11 @@ asyncblock(function(flow) {
 //asyncblock.enableTransform() must be called before requiring modules using this syntax.
 //See overview / API for more details
 
-asyncblock(function(flow) {
+var ab = require('asyncblock');
+
+if (ab.enableTransform(module)) { return; }
+
+ab(function(flow) {
     //Start two parallel file reads
     var contents1 = fs.readFile(path1, 'utf8').defer();
     var contents2 = fs.readFile(path2, 'utf8').defer();
@@ -130,26 +139,15 @@ asyncblock(function(flow) {
 });
 ```
 
-### Error handling
+### Returning results and Error Handling
 
 ```javascript
-var asyncTask = function(callback) {
-    asyncblock(function(flow) {
-        flow.errorCallback = callback; //Setting the errorCallback is the easiest way to perform error handling. If erroCallback isn't set, and an error occurs, it will be thrown instead of returned to the callback
-        
-        fs.readFile(path, 'utf8', flow.add()); //If readFile encountered an error, it would automatically get passed to the callback
-        var contents = flow.wait();
-        
-        console.log(contents); //If an error occured above, this code won't run
-    });
-});
-```
+var ab = require('asyncblock');
 
-### Returning results
+if (ab.enableTransform(module)) { return; }
 
-```javascript
 var asyncTask = function(callback) {
-    asyncblock(function(flow) {
+    ab(function(flow) {
         var contents = fs.readFile(path, 'utf8').sync(); //If readFile encountered an error, it would automatically get passed to the callback
 
         return contents; //Return the value you want to be passed to the callback
@@ -195,10 +193,6 @@ Fibers are threads which are allowed to pause and resume where they left off wit
      * In the worst case, if future versions of V8 break fibers support completely, a custom build of V8 would be required
      * In the best case, V8 builds in support for coroutines directly, and asyncblock becomes based on that
 * When new versions of node (V8) come out, you may have to wait longer to upgrade if the fibers code needs to be adjusted to work with it
-
-Note that when V8 supports generators, which is currently planned, the source transformation functionality of asyncblock will be able to transform
-most of the asyncblock code to be based on generators instead of fibers with no change to the original source. This helps
-reduce risk as it provides a path forward for asyncblock even if support for fibers became impossible in the future.
 
 ## Compared to other solutions...
 
@@ -304,9 +298,9 @@ async.series([
 
 ```javascript
 
-var asyncblock = require('asyncblock');
+var ab = require('asyncblock');
 
-asyncblock(function(flow){
+ab(function(flow){
     fs.readFile('path1', 'utf8', flow.add('first'));
     fs.readFile('path2', 'utf8', flow.add('second'));
     
@@ -325,9 +319,11 @@ asyncblock(function(flow){
 
 ```javascript
 //Requires asyncblock.enableTransform to be called before requiring this module
-var asyncblock = require('asyncblock');
+var ab = require('asyncblock');
 
-asyncblock(function(flow){
+if (ab.enableTransform(module)) { return; }
+
+ab(function(flow){
     var first = fs.readFile('path1', 'utf8').defer();
     var second = fs.readFile('path2', 'utf8').defer();
     
