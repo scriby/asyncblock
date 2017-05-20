@@ -1,6 +1,6 @@
 {
 	"name": "asyncblock",
-	"version": "2.2.10",
+	"version": "2.2.11",
 	"description": "A simple and powerful abstraction of node-fibers",
 	"keywords": [
 		"fiber", "fibers", "coroutine", "stop", "go", "green", "red" ],
@@ -14,10 +14,11 @@
 	},
 	"dependencies": {
 		"fibers": "1.0.15",
-		"asyncblock-generators": "2.2.10"
+		"asyncblock-generators": "2.2.11"
 	},
 	"devDependencies": {
 		"vows": "0.7.0",
 		"jshint": "0.5.9"
-	}
+	},
+	"typings": "./asyncblock.d.ts"
 }
